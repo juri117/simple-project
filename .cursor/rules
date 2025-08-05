@@ -1,0 +1,33 @@
+# Cursor Rules for Simple Project
+
+## PHP Server Setup
+- **ALWAYS** start the PHP server from the `backend` directory
+- The PHP files are stored in the `backend` folder
+- Use this command to start the server:
+  ```bash
+  cd backend && php -S localhost:8000
+  ```
+- Or with explicit document root:
+  ```bash
+  php -S localhost:8000 -t /path/to/project/backend
+  ```
+
+## Project Structure
+- `backend/` - Contains all PHP API files and database
+- `lib/` - Contains Flutter Dart files
+- `web/` - Contains Flutter web files
+- Database file: `backend/database.sqlite`
+
+## Database
+- Use `php init_db.php` to reset database with sample data
+
+## Development Workflow
+1. Start PHP server: `cd backend && php -S localhost:8000`
+2. Run Flutter app: `flutter run -d web-server --web-port 8080`
+3. Login with sample user (admin/admin123)
+4. Click on projects to view issues
+
+## Important Notes
+- The PHP server must be running for the Flutter app to work
+- All API endpoints return JSON responses
+- everything in the database is soft-deleted (flagged, not removed from database)

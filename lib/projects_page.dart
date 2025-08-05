@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'issues_page.dart';
 
 class Project {
   final int id;
@@ -316,95 +317,118 @@ class _ProjectsPageState extends State<ProjectsPage> {
                   final project = _projects[index];
                   return Card(
                     margin: const EdgeInsets.only(bottom: 16),
-                    child: ListTile(
-                      contentPadding: const EdgeInsets.all(16),
-                      title: Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              project.name,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 18,
-                              ),
+                    child: InkWell(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => IssuesPage(
+                              projectId: project.id,
+                              projectName: project.name,
                             ),
                           ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: project.status == 'active'
-                                  ? Colors.green
-                                  : Colors.orange,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              project.status.toUpperCase(),
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
+                        );
+                      },
+                      child: ListTile(
+                        contentPadding: const EdgeInsets.all(16),
+                        title: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                project.name,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 18,
+                                ),
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (project.description.isNotEmpty) ...[
-                            const SizedBox(height: 8),
-                            Text(
-                              project.description,
-                              style: Theme.of(context).textTheme.bodyMedium,
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: project.status == 'active'
+                                    ? Colors.green
+                                    : Colors.orange,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                project.status.toUpperCase(),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                             ),
                           ],
-                          const SizedBox(height: 8),
-                          Text(
-                            'Created: ${project.createdAt}',
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(color: Colors.grey[600]),
-                          ),
-                        ],
-                      ),
-                      trailing: PopupMenuButton<String>(
-                        onSelected: (value) {
-                          switch (value) {
-                            case 'edit':
-                              _editProject(project);
-                              break;
-                            case 'delete':
-                              _deleteProject(project);
-                              break;
-                          }
-                        },
-                        itemBuilder: (context) => [
-                          const PopupMenuItem(
-                            value: 'edit',
-                            child: Row(
+                        ),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (project.description.isNotEmpty) ...[
+                              const SizedBox(height: 8),
+                              Text(
+                                project.description,
+                                style: Theme.of(context).textTheme.bodyMedium,
+                              ),
+                            ],
+                            const SizedBox(height: 8),
+                            Row(
                               children: [
-                                Icon(Icons.edit),
-                                SizedBox(width: 8),
-                                Text('Edit'),
-                              ],
-                            ),
-                          ),
-                          const PopupMenuItem(
-                            value: 'delete',
-                            child: Row(
-                              children: [
-                                Icon(Icons.delete, color: Colors.red),
-                                SizedBox(width: 8),
                                 Text(
-                                  'Delete',
-                                  style: TextStyle(color: Colors.red),
+                                  'Created: ${project.createdAt}',
+                                  style: Theme.of(context).textTheme.bodySmall
+                                      ?.copyWith(color: Colors.grey[600]),
+                                ),
+                                const Spacer(),
+                                Icon(
+                                  Icons.arrow_forward_ios,
+                                  size: 16,
+                                  color: Colors.grey[600],
                                 ),
                               ],
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
+                        trailing: PopupMenuButton<String>(
+                          onSelected: (value) {
+                            switch (value) {
+                              case 'edit':
+                                _editProject(project);
+                                break;
+                              case 'delete':
+                                _deleteProject(project);
+                                break;
+                            }
+                          },
+                          itemBuilder: (context) => [
+                            const PopupMenuItem(
+                              value: 'edit',
+                              child: Row(
+                                children: [
+                                  Icon(Icons.edit),
+                                  SizedBox(width: 8),
+                                  Text('Edit'),
+                                ],
+                              ),
+                            ),
+                            const PopupMenuItem(
+                              value: 'delete',
+                              child: Row(
+                                children: [
+                                  Icon(Icons.delete, color: Colors.red),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    'Delete',
+                                    style: TextStyle(color: Colors.red),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   );
