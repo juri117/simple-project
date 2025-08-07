@@ -28,7 +28,7 @@ try {
             
             $stmt = $pdo->prepare("
                 SELECT 
-                    i.id, i.title, i.description, i.status, i.priority, i.tags,
+                    i.id, i.project_id, i.title, i.description, i.status, i.priority, i.tags,
                     i.created_at, i.updated_at,
                     c.username as creator_name,
                     a.username as assignee_name
@@ -98,7 +98,7 @@ try {
             // Get the created issue with user names
             $stmt = $pdo->prepare("
                 SELECT 
-                    i.id, i.title, i.description, i.status, i.priority, i.tags,
+                    i.id, i.project_id, i.title, i.description, i.status, i.priority, i.tags,
                     i.created_at, i.updated_at,
                     c.username as creator_name,
                     a.username as assignee_name
@@ -134,6 +134,7 @@ try {
             $priority = isset($input['priority']) ? $input['priority'] : 'medium';
             $tags = isset($input['tags']) ? trim($input['tags']) : '';
             $assignee_id = isset($input['assignee_id']) ? (int)$input['assignee_id'] : null;
+            $project_id = isset($input['project_id']) ? (int)$input['project_id'] : null;
             
             if (empty($title)) {
                 http_response_code(400);
@@ -141,12 +142,33 @@ try {
                 exit();
             }
             
-            $stmt = $pdo->prepare("
-                UPDATE issues 
-                SET title = ?, description = ?, status = ?, priority = ?, tags = ?, assignee_id = ?, updated_at = CURRENT_TIMESTAMP 
-                WHERE id = ? AND deleted = 0
-            ");
-            $result = $stmt->execute([$title, $description, $status, $priority, $tags, $assignee_id, $id]);
+            // Validate project exists if project_id is provided
+            if ($project_id !== null) {
+                $stmt = $pdo->prepare("SELECT id FROM projects WHERE id = ? AND deleted = 0");
+                $stmt->execute([$project_id]);
+                if (!$stmt->fetch()) {
+                    http_response_code(404);
+                    echo json_encode(['error' => 'Project not found']);
+                    exit();
+                }
+            }
+            
+            // Build the UPDATE query based on whether project_id is provided
+            if ($project_id !== null) {
+                $stmt = $pdo->prepare("
+                    UPDATE issues 
+                    SET title = ?, description = ?, status = ?, priority = ?, tags = ?, assignee_id = ?, project_id = ?, updated_at = CURRENT_TIMESTAMP 
+                    WHERE id = ? AND deleted = 0
+                ");
+                $result = $stmt->execute([$title, $description, $status, $priority, $tags, $assignee_id, $project_id, $id]);
+            } else {
+                $stmt = $pdo->prepare("
+                    UPDATE issues 
+                    SET title = ?, description = ?, status = ?, priority = ?, tags = ?, assignee_id = ?, updated_at = CURRENT_TIMESTAMP 
+                    WHERE id = ? AND deleted = 0
+                ");
+                $result = $stmt->execute([$title, $description, $status, $priority, $tags, $assignee_id, $id]);
+            }
             
             if ($stmt->rowCount() === 0) {
                 http_response_code(404);
@@ -157,7 +179,7 @@ try {
             // Get the updated issue with user names
             $stmt = $pdo->prepare("
                 SELECT 
-                    i.id, i.title, i.description, i.status, i.priority, i.tags,
+                    i.id, i.project_id, i.title, i.description, i.status, i.priority, i.tags,
                     i.created_at, i.updated_at,
                     c.username as creator_name,
                     a.username as assignee_name

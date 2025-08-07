@@ -2,8 +2,38 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
+class Project {
+  final int id;
+  final String name;
+  final String description;
+  final String status;
+  final String createdAt;
+  final String updatedAt;
+
+  Project({
+    required this.id,
+    required this.name,
+    required this.description,
+    required this.status,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+
+  factory Project.fromJson(Map<String, dynamic> json) {
+    return Project(
+      id: json['id'],
+      name: json['name'],
+      description: json['description'] ?? '',
+      status: json['status'],
+      createdAt: json['created_at'],
+      updatedAt: json['updated_at'],
+    );
+  }
+}
+
 class Issue {
   final int id;
+  final int projectId;
   final String title;
   final String description;
   final String status;
@@ -16,6 +46,7 @@ class Issue {
 
   Issue({
     required this.id,
+    required this.projectId,
     required this.title,
     required this.description,
     required this.status,
@@ -30,6 +61,7 @@ class Issue {
   factory Issue.fromJson(Map<String, dynamic> json) {
     return Issue(
       id: json['id'],
+      projectId: json['project_id'],
       title: json['title'],
       description: json['description'] ?? '',
       status: json['status'],
@@ -71,6 +103,7 @@ class IssuesPage extends StatefulWidget {
 class _IssuesPageState extends State<IssuesPage> {
   List<Issue> _issues = [];
   List<User> _users = [];
+  List<Project> _projects = [];
   bool _isLoading = true;
   bool _isError = false;
   String _errorMessage = '';
@@ -106,6 +139,14 @@ class _IssuesPageState extends State<IssuesPage> {
       errorMsg += '\nFailed to load users: $e';
     }
 
+    // Load projects
+    try {
+      await _loadProjects();
+    } catch (e) {
+      hasError = true;
+      errorMsg += '\nFailed to load projects: $e';
+    }
+
     setState(() {
       _isLoading = false;
       if (hasError) {
@@ -116,15 +157,12 @@ class _IssuesPageState extends State<IssuesPage> {
   }
 
   Future<void> _loadIssues() async {
-    print('Loading issues for project ${widget.projectId}');
     final response = await http.get(
       Uri.parse(
         'http://localhost:8000/issues.php?project_id=${widget.projectId}',
       ),
       headers: {'Content-Type': 'application/json'},
     );
-    print('Issues response status: ${response.statusCode}');
-    print('Issues response body: ${response.body}');
 
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
@@ -143,13 +181,10 @@ class _IssuesPageState extends State<IssuesPage> {
   }
 
   Future<void> _loadUsers() async {
-    print('Loading users');
     final response = await http.get(
       Uri.parse('http://localhost:8000/users.php'),
       headers: {'Content-Type': 'application/json'},
     );
-    print('Users response status: ${response.statusCode}');
-    print('Users response body: ${response.body}');
 
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
@@ -167,11 +202,36 @@ class _IssuesPageState extends State<IssuesPage> {
     }
   }
 
+  Future<void> _loadProjects() async {
+    final response = await http.get(
+      Uri.parse('http://localhost:8000/projects.php'),
+      headers: {'Content-Type': 'application/json'},
+    );
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      if (data['success'] == true) {
+        setState(() {
+          _projects = (data['projects'] as List)
+              .map((project) => Project.fromJson(project))
+              .toList();
+        });
+      } else {
+        throw Exception(data['error'] ?? 'Failed to load projects');
+      }
+    } else {
+      throw Exception('HTTP ${response.statusCode}: ${response.reasonPhrase}');
+    }
+  }
+
   Future<void> _createIssue() async {
     final result = await showDialog<Map<String, dynamic>>(
       context: context,
-      builder: (context) =>
-          IssueDialog(users: _users, projectId: widget.projectId),
+      builder: (context) => IssueDialog(
+        users: _users,
+        projects: _projects,
+        projectId: widget.projectId,
+      ),
     );
 
     if (result != null) {
@@ -218,8 +278,12 @@ class _IssuesPageState extends State<IssuesPage> {
   Future<void> _editIssue(Issue issue) async {
     final result = await showDialog<Map<String, dynamic>>(
       context: context,
-      builder: (context) =>
-          IssueDialog(issue: issue, users: _users, projectId: widget.projectId),
+      builder: (context) => IssueDialog(
+        issue: issue,
+        users: _users,
+        projects: _projects,
+        projectId: widget.projectId,
+      ),
     );
 
     if (result != null) {
@@ -595,12 +659,14 @@ class _IssuesPageState extends State<IssuesPage> {
 class IssueDialog extends StatefulWidget {
   final Issue? issue;
   final List<User> users;
+  final List<Project> projects;
   final int projectId;
 
   const IssueDialog({
     super.key,
     this.issue,
     required this.users,
+    required this.projects,
     required this.projectId,
   });
 
@@ -616,10 +682,14 @@ class _IssueDialogState extends State<IssueDialog> {
   String _status = 'open';
   String _priority = 'medium';
   int? _assigneeId;
+  int? _selectedProjectId;
 
   @override
   void initState() {
     super.initState();
+    // Set the selected project to the current project for new issues
+    _selectedProjectId = widget.projectId;
+
     if (widget.issue != null) {
       _titleController.text = widget.issue!.title;
       _descriptionController.text = widget.issue!.description;
@@ -632,6 +702,8 @@ class _IssueDialogState extends State<IssueDialog> {
         orElse: () => User(id: 0, username: ''),
       );
       _assigneeId = assignee.id > 0 ? assignee.id : null;
+      // For existing issues, use the project ID from the issue
+      _selectedProjectId = widget.issue!.projectId;
     }
   }
 
@@ -662,6 +734,31 @@ class _IssueDialogState extends State<IssueDialog> {
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
                     return 'Please enter an issue title';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<int>(
+                value: _selectedProjectId,
+                decoration: const InputDecoration(
+                  labelText: 'Project',
+                  border: OutlineInputBorder(),
+                ),
+                items: widget.projects.map((project) {
+                  return DropdownMenuItem<int>(
+                    value: project.id,
+                    child: Text(project.name),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedProjectId = value;
+                  });
+                },
+                validator: (value) {
+                  if (value == null) {
+                    return 'Please select a project';
                   }
                   return null;
                 },
@@ -779,7 +876,7 @@ class _IssueDialogState extends State<IssueDialog> {
           onPressed: () {
             if (_formKey.currentState!.validate()) {
               final data = {
-                'project_id': widget.projectId.toString(),
+                'project_id': _selectedProjectId.toString(),
                 'title': _titleController.text.trim(),
                 'description': _descriptionController.text.trim(),
                 'status': _status,
