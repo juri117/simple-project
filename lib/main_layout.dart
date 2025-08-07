@@ -156,12 +156,12 @@ class _MainLayoutState extends State<MainLayout> {
       child: Column(
         children: [
           // Header
-          DrawerHeader(
-            decoration: const BoxDecoration(color: Color(0xFF667eea)),
+          const DrawerHeader(
+            decoration: BoxDecoration(color: Color(0xFF667eea)),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'Project Manager',
                   style: TextStyle(
                     color: Colors.white,
@@ -169,8 +169,8 @@ class _MainLayoutState extends State<MainLayout> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: 4),
-                const Text(
+                SizedBox(height: 4),
+                Text(
                   'Manage your projects and issues',
                   style: TextStyle(color: Colors.white70, fontSize: 12),
                 ),

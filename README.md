@@ -1,269 +1,88 @@
-# Simple Project - Flutter Web App with PHP Backend
+# Simple Project
 
-A Flutter web application with a PHP backend and SQLite database for user authentication.
+A Flutter web application for project and issue management.
 
 ## Features
 
-- **Flutter Web App**: Modern, responsive login interface and project management
-- **PHP Backend**: RESTful API for user authentication and project CRUD operations
-- **SQLite Database**: Lightweight database for user and project management
-- **Secure Authentication**: Password hashing and validation
-- **Project Management**: Create, read, update, and delete projects with soft delete
+- **Project Management**: Create, edit, and manage projects
+- **Issue Tracking**: Create, assign, and track issues with full CRUD operations
+- **User Management**: Manage users and assign issues
+- **Advanced Filtering**: Filter issues by project, status, priority, tags, creator, and assignee
+- **Markdown Support**: Rich text formatting in issue descriptions
 
-## Project Structure
+## Markdown Support
 
+Issue descriptions now support markdown formatting! You can use the following markdown features:
+
+### Text Formatting
+- **Bold text**: `**bold**` or `__bold__`
+- *Italic text*: `*italic*` or `_italic_`
+- `Inline code`: Use backticks
+- ~~Strikethrough~~: `~~text~~`
+
+### Headers
+- # H1 Header
+- ## H2 Header  
+- ### H3 Header
+
+### Lists
+- Unordered lists: `- item` or `* item`
+- Ordered lists: `1. item`
+
+### Code Blocks
 ```
-simple_project/
-├── lib/
-│   ├── main.dart              # Flutter app entry point
-│   ├── login_screen.dart      # Login screen UI
-│   └── projects_page.dart     # Project management UI
-├── backend/
-│   ├── init_db.php            # Database initialization script
-│   ├── login.php              # Login API endpoint
-│   ├── projects.php           # Projects CRUD API endpoint
-│   ├── database.sqlite        # SQLite database (created after setup)
-│   └── .htaccess              # Apache configuration
-├── setup_web_server.sh        # Web server setup script
-└── README.md                  # This file
-```
-
-## Prerequisites
-
-- Flutter SDK (with web support)
-- PHP 8.0+ with SQLite extension
-- Apache web server (for deployment)
-- Modern web browser
-
-## Setup Instructions
-
-### 1. Install Dependencies
-
-```bash
-# Install Flutter dependencies
-flutter pub get
-
-# Install PHP and SQLite (if not already installed)
-sudo apt update
-sudo apt install -y php-cli php-sqlite3
+Use triple backticks for code blocks
 ```
 
-### 2. Initialize Database
+### Links
+[Link text](URL)
 
-```bash
-cd backend
-php init_db.php
-```
+### Blockquotes
+> Use > for blockquotes
 
-This creates the SQLite database with a sample user:
-- **Username**: admin
-- **Password**: admin123
+### Preview Mode
+When creating or editing issues, you can toggle between "Edit" and "Preview" modes to see how your markdown will be rendered.
 
-### 3. Development Setup
+## Getting Started
 
-For development, you can run the Flutter app locally:
-
-```bash
-# Run Flutter web app
-flutter run -d web-server --web-port 8080
-
-# In another terminal, start a simple PHP server for the backend
-cd backend
-php -S localhost:8000
-```
-
-**Note**: You'll need to update the API URL in `lib/login_screen.dart` to point to `http://localhost:8000/login.php` for development.
-
-### 4. Production Deployment
-
-#### Option A: Using the Setup Script
-
-```bash
-# Run the web server setup script
-sudo ./setup_web_server.sh
-
-# Build the Flutter web app
-flutter build web
-
-# Deploy to web server
-sudo cp -r build/web/* /var/www/html/
-sudo cp -r backend /var/www/html/
-```
-
-#### Option B: Manual Setup
-
-1. **Install Apache and PHP**:
+1. Start the PHP backend server:
    ```bash
-   sudo apt install apache2 php libapache2-mod-php php-sqlite3
-   sudo a2enmod rewrite headers
-   sudo systemctl restart apache2
+   cd backend
+   php -S localhost:8000
    ```
 
-2. **Build and Deploy Flutter App**:
+2. Run the Flutter web app:
    ```bash
-   flutter build web
-   sudo cp -r build/web/* /var/www/html/
-   sudo cp -r backend /var/www/html/
+   flutter run -d chrome
    ```
 
-3. **Set Permissions**:
-   ```bash
-   sudo chown -R www-data:www-data /var/www/html/
-   sudo chmod -R 755 /var/www/html/
-   ```
+3. Open your browser and navigate to `http://localhost:3000`
 
-## Usage
+## Database Setup
 
-1. Open your web browser and navigate to `http://localhost`
-2. Use the demo credentials:
-   - Username: `admin`
-   - Password: `admin123`
-3. The app will authenticate against the SQLite database
+The application uses SQLite for data storage. The database will be automatically created when you first run the application.
 
 ## API Endpoints
 
-### POST /backend/login.php
+- `GET /projects.php` - Get all projects
+- `POST /projects.php` - Create a new project
+- `PUT /projects.php` - Update a project
+- `DELETE /projects.php` - Delete a project
 
-Authenticates a user with username and password.
+- `GET /issues.php` - Get all issues
+- `POST /issues.php` - Create a new issue
+- `PUT /issues.php` - Update an issue
+- `DELETE /issues.php` - Delete an issue
 
-**Request Body**:
-```json
-{
-  "username": "admin",
-  "password": "admin123"
-}
-```
+- `GET /users.php` - Get all users
+- `POST /users.php` - Create a new user
+- `PUT /users.php` - Update a user
+- `DELETE /users.php` - Delete a user
 
-**Success Response**:
-```json
-{
-  "success": true,
-  "message": "Login successful",
-  "user": {
-    "id": 1,
-    "username": "admin"
-  }
-}
-```
+## Technologies Used
 
-**Error Response**:
-```json
-{
-  "success": false,
-  "error": "Invalid username or password"
-}
-```
-
-### GET /backend/projects.php
-
-Retrieves all active projects.
-
-**Response**:
-```json
-{
-  "success": true,
-  "projects": [
-    {
-      "id": 1,
-      "name": "Software",
-      "description": "Software development project for new application features",
-      "status": "active",
-      "created_at": "2025-08-05 19:10:40",
-      "updated_at": "2025-08-05 19:10:40"
-    }
-  ]
-}
-```
-
-### POST /backend/projects.php
-
-Creates a new project.
-
-**Request Body**:
-```json
-{
-  "name": "New Project",
-  "description": "Project description",
-  "status": "active"
-}
-```
-
-**Response**:
-```json
-{
-  "success": true,
-  "message": "Project created successfully",
-  "project": {
-    "id": 3,
-    "name": "New Project",
-    "description": "Project description",
-    "status": "active",
-    "created_at": "2025-08-05 19:10:40",
-    "updated_at": "2025-08-05 19:10:40"
-  }
-}
-```
-
-### PUT /backend/projects.php
-
-Updates an existing project.
-
-**Request Body**:
-```json
-{
-  "id": "1",
-  "name": "Updated Project",
-  "description": "Updated description",
-  "status": "completed"
-}
-```
-
-### DELETE /backend/projects.php
-
-Soft deletes a project (sets deleted flag).
-
-**Request Body**:
-```json
-{
-  "id": "1"
-}
-```
-
-## Security Features
-
-- **Password Hashing**: Passwords are hashed using PHP's `password_hash()` function
-- **SQL Injection Prevention**: Uses prepared statements for database queries
-- **CORS Support**: Configured for cross-origin requests
-- **Input Validation**: Server-side validation of user inputs
-
-## Customization
-
-### Adding New Users
-
-You can add new users by modifying the `init_db.php` script or creating a registration endpoint.
-
-### Styling
-
-The Flutter app uses Material Design 3 with a custom color scheme. You can modify the colors in `lib/login_screen.dart` and `lib/main.dart`.
-
-### Database Schema
-
-The current database schema includes:
-- `users` table with `id`, `username`, `password`, and `created_at` fields
-
-## Troubleshooting
-
-### Common Issues
-
-1. **CORS Errors**: Ensure the `.htaccess` file is properly configured
-2. **Database Connection**: Check that SQLite is installed and the database file is writable
-3. **Apache Configuration**: Verify that mod_rewrite and mod_headers are enabled
-
-### Logs
-
-- Apache logs: `/var/log/apache2/error.log`
-- PHP errors: Check Apache error logs or enable PHP error logging
-
-## License
-
-This project is open source and available under the MIT License.
+- **Frontend**: Flutter Web
+- **Backend**: PHP with SQLite
+- **Markdown Rendering**: flutter_markdown package
+- **Routing**: go_router
+- **HTTP Client**: http package

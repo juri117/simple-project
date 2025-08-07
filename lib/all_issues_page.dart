@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:go_router/go_router.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import 'dart:convert';
 
 class FilterOption<T> {
@@ -95,6 +96,97 @@ class User {
 
   factory User.fromJson(Map<String, dynamic> json) {
     return User(id: json['id'], username: json['username']);
+  }
+}
+
+class IssueDescriptionWidget extends StatelessWidget {
+  final String description;
+  final int maxLines;
+
+  const IssueDescriptionWidget({
+    super.key,
+    required this.description,
+    this.maxLines = 2,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (description.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    // Check if the description contains markdown syntax
+    final hasMarkdown = description.contains('**') ||
+        description.contains('*') ||
+        description.contains('#') ||
+        description.contains('`') ||
+        description.contains('[') ||
+        description.contains('![') ||
+        description.contains('- ') ||
+        description.contains('1. ');
+
+    if (hasMarkdown) {
+      return MarkdownBody(
+        data: description,
+        shrinkWrap: true,
+        fitContent: true,
+        styleSheet: MarkdownStyleSheet(
+          p: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                fontSize: 14,
+                height: 1.4,
+              ),
+          h1: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+          h2: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+          h3: Theme.of(context).textTheme.titleSmall?.copyWith(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+              ),
+          code: TextStyle(
+            backgroundColor: Colors.grey[200],
+            fontFamily: 'monospace',
+            fontSize: 12,
+          ),
+          codeblockDecoration: BoxDecoration(
+            color: Colors.grey[100],
+            borderRadius: BorderRadius.circular(4),
+          ),
+          blockquote: TextStyle(
+            color: Colors.grey[600],
+            fontStyle: FontStyle.italic,
+          ),
+          blockquoteDecoration: BoxDecoration(
+            border: Border(
+              left: BorderSide(color: Colors.grey[400]!, width: 4),
+            ),
+            color: Colors.grey[50],
+          ),
+        ),
+        selectable: false,
+        onTapLink: (text, url, title) {
+          // Handle link taps if needed
+          if (url != null) {
+            // You could add URL launcher here if needed
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Link: $url')),
+            );
+          }
+        },
+      );
+    } else {
+      // For plain text, use regular Text widget
+      return Text(
+        description,
+        maxLines: maxLines,
+        overflow: TextOverflow.ellipsis,
+        style: Theme.of(context).textTheme.bodyMedium,
+      );
+    }
   }
 }
 
@@ -709,6 +801,39 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
     return project.name;
   }
 
+  void _showDescriptionDialog(Issue issue) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Description: ${issue.title}'),
+        content: Container(
+          width: double.maxFinite,
+          constraints: const BoxConstraints(maxHeight: 400),
+          child: SingleChildScrollView(
+            child: issue.description.isNotEmpty
+                ? IssueDescriptionWidget(
+                    description: issue.description,
+                    maxLines: 100,
+                  )
+                : const Text(
+                    'No description provided.',
+                    style: TextStyle(
+                      fontStyle: FontStyle.italic,
+                      color: Colors.grey,
+                    ),
+                  ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildCompactFilterPanel() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -1190,86 +1315,15 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
                                   itemBuilder: (context, index) {
                                     final issue = _getFilteredIssues()[index];
                                     return Card(
-                                      margin: const EdgeInsets.only(bottom: 16),
-                                      child: ListTile(
-                                        contentPadding:
-                                            const EdgeInsets.all(16),
-                                        title: Row(
-                                          children: [
-                                            Expanded(
-                                              child: Text(
-                                                issue.title,
-                                                style: const TextStyle(
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 16,
-                                                ),
-                                              ),
-                                            ),
-                                            Container(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                horizontal: 8,
-                                                vertical: 4,
-                                              ),
-                                              decoration: BoxDecoration(
-                                                color: _getPriorityColor(
-                                                    issue.priority),
-                                                borderRadius:
-                                                    BorderRadius.circular(12),
-                                              ),
-                                              child: Text(
-                                                issue.priority.toUpperCase(),
-                                                style: const TextStyle(
-                                                  color: Colors.white,
-                                                  fontSize: 10,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        subtitle: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            // Project name
-                                            Row(
+                                        margin:
+                                            const EdgeInsets.only(bottom: 16),
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(16),
+                                          child: Row(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
                                               children: [
-                                                Icon(
-                                                  Icons.folder,
-                                                  size: 14,
-                                                  color: Colors.grey[600],
-                                                ),
-                                                const SizedBox(width: 4),
-                                                Text(
-                                                  issue.projectName,
-                                                  style: Theme.of(context)
-                                                      .textTheme
-                                                      .bodySmall
-                                                      ?.copyWith(
-                                                        color: const Color(
-                                                            0xFF667eea),
-                                                        fontWeight:
-                                                            FontWeight.bold,
-                                                      ),
-                                                ),
-                                              ],
-                                            ),
-                                            const SizedBox(height: 8),
-                                            if (issue
-                                                .description.isNotEmpty) ...[
-                                              Text(
-                                                issue.description,
-                                                maxLines: 2,
-                                                overflow: TextOverflow.ellipsis,
-                                                style: Theme.of(
-                                                  context,
-                                                ).textTheme.bodyMedium,
-                                              ),
-                                              const SizedBox(height: 8),
-                                            ],
-                                            Row(
-                                              children: [
+                                                // Priority badge on the left
                                                 Container(
                                                   padding: const EdgeInsets
                                                       .symmetric(
@@ -1277,15 +1331,14 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
                                                     vertical: 4,
                                                   ),
                                                   decoration: BoxDecoration(
-                                                    color: _getStatusColor(
-                                                        issue.status),
+                                                    color: _getPriorityColor(
+                                                        issue.priority),
                                                     borderRadius:
                                                         BorderRadius.circular(
                                                             12),
                                                   ),
                                                   child: Text(
-                                                    issue.status
-                                                        .replaceAll('_', ' ')
+                                                    issue.priority
                                                         .toUpperCase(),
                                                     style: const TextStyle(
                                                       color: Colors.white,
@@ -1295,121 +1348,236 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
                                                     ),
                                                   ),
                                                 ),
-                                                const SizedBox(width: 8),
-                                                if (issue.tags.isNotEmpty) ...[
-                                                  Icon(
-                                                    Icons.label,
-                                                    size: 14,
-                                                    color: Colors.grey[600],
-                                                  ),
-                                                  const SizedBox(width: 4),
-                                                  Text(
-                                                    issue.tags,
-                                                    style: Theme.of(context)
-                                                        .textTheme
-                                                        .bodySmall
-                                                        ?.copyWith(
+                                                const SizedBox(width: 12),
+                                                // Main content
+                                                Expanded(
+                                                  child: Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    children: [
+                                                      Text(
+                                                        issue.title,
+                                                        style: const TextStyle(
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                          fontSize: 16,
+                                                        ),
+                                                      ),
+                                                      const SizedBox(height: 8),
+                                                      // Project name
+                                                      Row(
+                                                        children: [
+                                                          Icon(
+                                                            Icons.folder,
+                                                            size: 14,
                                                             color: Colors
-                                                                .grey[600]),
-                                                  ),
-                                                ],
-                                              ],
-                                            ),
-                                            const SizedBox(height: 8),
-                                            Row(
-                                              children: [
-                                                Icon(
-                                                  Icons.person,
-                                                  size: 14,
-                                                  color: Colors.grey[600],
-                                                ),
-                                                const SizedBox(width: 4),
-                                                Text(
-                                                  'By ${issue.creatorName}',
-                                                  style: Theme.of(context)
-                                                      .textTheme
-                                                      .bodySmall
-                                                      ?.copyWith(
-                                                          color:
-                                                              Colors.grey[600]),
-                                                ),
-                                                if (issue.assigneeName !=
-                                                    null) ...[
-                                                  const SizedBox(width: 16),
-                                                  Icon(
-                                                    Icons.assignment_ind,
-                                                    size: 14,
-                                                    color: Colors.grey[600],
-                                                  ),
-                                                  const SizedBox(width: 4),
-                                                  Text(
-                                                    'Assigned to ${issue.assigneeName}',
-                                                    style: Theme.of(context)
-                                                        .textTheme
-                                                        .bodySmall
-                                                        ?.copyWith(
+                                                                .grey[600],
+                                                          ),
+                                                          const SizedBox(
+                                                              width: 4),
+                                                          Text(
+                                                            issue.projectName,
+                                                            style: Theme.of(
+                                                                    context)
+                                                                .textTheme
+                                                                .bodySmall
+                                                                ?.copyWith(
+                                                                  color: const Color(
+                                                                      0xFF667eea),
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .bold,
+                                                                ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                      const SizedBox(height: 8),
+                                                      Row(
+                                                        children: [
+                                                          Container(
+                                                            padding:
+                                                                const EdgeInsets
+                                                                    .symmetric(
+                                                              horizontal: 8,
+                                                              vertical: 4,
+                                                            ),
+                                                            decoration:
+                                                                BoxDecoration(
+                                                              color: _getStatusColor(
+                                                                  issue.status),
+                                                              borderRadius:
+                                                                  BorderRadius
+                                                                      .circular(
+                                                                          12),
+                                                            ),
+                                                            child: Text(
+                                                              issue.status
+                                                                  .replaceAll(
+                                                                      '_', ' ')
+                                                                  .toUpperCase(),
+                                                              style:
+                                                                  const TextStyle(
+                                                                color: Colors
+                                                                    .white,
+                                                                fontSize: 10,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .bold,
+                                                              ),
+                                                            ),
+                                                          ),
+                                                          const SizedBox(
+                                                              width: 8),
+                                                          if (issue.tags
+                                                              .isNotEmpty) ...[
+                                                            Icon(
+                                                              Icons.label,
+                                                              size: 14,
+                                                              color: Colors
+                                                                  .grey[600],
+                                                            ),
+                                                            const SizedBox(
+                                                                width: 4),
+                                                            Text(
+                                                              issue.tags,
+                                                              style: Theme.of(
+                                                                      context)
+                                                                  .textTheme
+                                                                  .bodySmall
+                                                                  ?.copyWith(
+                                                                      color: Colors
+                                                                              .grey[
+                                                                          600]),
+                                                            ),
+                                                          ],
+                                                        ],
+                                                      ),
+                                                      const SizedBox(height: 8),
+                                                      Row(
+                                                        children: [
+                                                          Icon(
+                                                            Icons.person,
+                                                            size: 14,
                                                             color: Colors
-                                                                .grey[600]),
+                                                                .grey[600],
+                                                          ),
+                                                          const SizedBox(
+                                                              width: 4),
+                                                          Text(
+                                                            'By ${issue.creatorName}',
+                                                            style: Theme.of(
+                                                                    context)
+                                                                .textTheme
+                                                                .bodySmall
+                                                                ?.copyWith(
+                                                                    color: Colors
+                                                                            .grey[
+                                                                        600]),
+                                                          ),
+                                                          if (issue
+                                                                  .assigneeName !=
+                                                              null) ...[
+                                                            const SizedBox(
+                                                                width: 16),
+                                                            Icon(
+                                                              Icons
+                                                                  .assignment_ind,
+                                                              size: 14,
+                                                              color: Colors
+                                                                  .grey[600],
+                                                            ),
+                                                            const SizedBox(
+                                                                width: 4),
+                                                            Text(
+                                                              'Assigned to ${issue.assigneeName}',
+                                                              style: Theme.of(
+                                                                      context)
+                                                                  .textTheme
+                                                                  .bodySmall
+                                                                  ?.copyWith(
+                                                                      color: Colors
+                                                                              .grey[
+                                                                          600]),
+                                                            ),
+                                                          ],
+                                                        ],
+                                                      ),
+                                                      const SizedBox(height: 4),
+                                                      Text(
+                                                        'Created: ${issue.createdAt}',
+                                                        style: Theme.of(context)
+                                                            .textTheme
+                                                            .bodySmall
+                                                            ?.copyWith(
+                                                                color: Colors
+                                                                    .grey[600]),
+                                                      ),
+                                                    ],
                                                   ),
-                                                ],
-                                              ],
-                                            ),
-                                            const SizedBox(height: 4),
-                                            Text(
-                                              'Created: ${issue.createdAt}',
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .bodySmall
-                                                  ?.copyWith(
-                                                      color: Colors.grey[600]),
-                                            ),
-                                          ],
-                                        ),
-                                        trailing: PopupMenuButton<String>(
-                                          onSelected: (value) {
-                                            switch (value) {
-                                              case 'edit':
-                                                _editIssue(issue);
-                                                break;
-                                              case 'delete':
-                                                _deleteIssue(issue);
-                                                break;
-                                            }
-                                          },
-                                          itemBuilder: (context) => [
-                                            const PopupMenuItem(
-                                              value: 'edit',
-                                              child: Row(
-                                                children: [
-                                                  Icon(Icons.edit),
-                                                  SizedBox(width: 8),
-                                                  Text('Edit'),
-                                                ],
-                                              ),
-                                            ),
-                                            const PopupMenuItem(
-                                              value: 'delete',
-                                              child: Row(
-                                                children: [
-                                                  Icon(Icons.delete,
-                                                      color: Colors.red),
-                                                  SizedBox(width: 8),
-                                                  Text(
-                                                    'Delete',
-                                                    style: TextStyle(
-                                                        color: Colors.red),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    );
+                                                ),
+                                                const SizedBox(width: 12),
+                                                // Right side action buttons
+                                                Column(
+                                                  children: [
+                                                    IconButton(
+                                                      onPressed: () =>
+                                                          _showDescriptionDialog(
+                                                              issue),
+                                                      icon: const Icon(
+                                                          Icons.info,
+                                                          size: 20),
+                                                      tooltip:
+                                                          'View description',
+                                                      style:
+                                                          IconButton.styleFrom(
+                                                        backgroundColor:
+                                                            Colors.green[50],
+                                                        foregroundColor:
+                                                            Colors.green[700],
+                                                      ),
+                                                    ),
+                                                    const SizedBox(height: 4),
+                                                    IconButton(
+                                                      onPressed: () =>
+                                                          _editIssue(issue),
+                                                      icon: const Icon(
+                                                          Icons.edit,
+                                                          size: 20),
+                                                      tooltip: 'Edit issue',
+                                                      style:
+                                                          IconButton.styleFrom(
+                                                        backgroundColor:
+                                                            Colors.blue[50],
+                                                        foregroundColor:
+                                                            Colors.blue[700],
+                                                      ),
+                                                    ),
+                                                    const SizedBox(height: 4),
+                                                    IconButton(
+                                                      onPressed: () =>
+                                                          _deleteIssue(issue),
+                                                      icon: const Icon(
+                                                          Icons.delete,
+                                                          size: 20),
+                                                      tooltip: 'Delete issue',
+                                                      style:
+                                                          IconButton.styleFrom(
+                                                        backgroundColor:
+                                                            Colors.red[50],
+                                                        foregroundColor:
+                                                            Colors.red[700],
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ]),
+                                        ));
                                   },
                                 ),
                               ),
           ),
+          //),
         ],
       ),
       floatingActionButton: FloatingActionButton(
@@ -1447,6 +1615,7 @@ class _IssueDialogState extends State<IssueDialog> {
   String _priority = 'medium';
   int? _assigneeId;
   int? _selectedProjectId;
+  bool _showDescriptionPreview = false;
 
   @override
   void initState() {
@@ -1529,13 +1698,63 @@ class _IssueDialogState extends State<IssueDialog> {
                 },
               ),
               const SizedBox(height: 16),
-              TextFormField(
-                controller: _descriptionController,
-                decoration: const InputDecoration(
-                  labelText: 'Description (Markdown supported)',
-                  border: OutlineInputBorder(),
-                ),
-                maxLines: 4,
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Text(
+                        'Description (Markdown supported)',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const Spacer(),
+                      TextButton.icon(
+                        onPressed: () {
+                          setState(() {
+                            _showDescriptionPreview = !_showDescriptionPreview;
+                          });
+                        },
+                        icon: Icon(_showDescriptionPreview
+                            ? Icons.edit
+                            : Icons.preview),
+                        label:
+                            Text(_showDescriptionPreview ? 'Edit' : 'Preview'),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  if (_showDescriptionPreview) ...[
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey[300]!),
+                        borderRadius: BorderRadius.circular(4),
+                        color: Colors.grey[50],
+                      ),
+                      child: IssueDescriptionWidget(
+                        description: _descriptionController.text.isEmpty
+                            ? '*No description*'
+                            : _descriptionController.text,
+                        maxLines: 10,
+                      ),
+                    ),
+                  ] else ...[
+                    TextFormField(
+                      controller: _descriptionController,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        hintText:
+                            'Use **bold**, *italic*, `code`, # headers, - lists, etc.',
+                      ),
+                      maxLines: 6,
+                      maxLength: 1000,
+                    ),
+                  ],
+                ],
               ),
               const SizedBox(height: 16),
               TextFormField(
