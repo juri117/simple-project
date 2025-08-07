@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
+import 'package:go_router/go_router.dart';
 import 'dart:convert';
 
 class FilterOption<T> {
@@ -120,6 +122,7 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
   Set<String> _selectedStatuses = {};
   Set<String> _selectedTags = {};
   Set<String> _selectedPriorities = {};
+  bool _urlFiltersParsed = false;
 
   @override
   void initState() {
@@ -129,6 +132,97 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
       _selectedProjects.add(widget.initialProjectId!);
     }
     _loadData();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Parse URL parameters for filters after context is available
+    if (!_urlFiltersParsed) {
+      _parseUrlFilters();
+      _urlFiltersParsed = true;
+    }
+  }
+
+  void _parseUrlFilters() {
+    final uri = Uri.parse(GoRouterState.of(context).uri.toString());
+
+    // Parse project filters
+    if (uri.queryParameters['projects'] != null) {
+      final projectIds = uri.queryParameters['projects']!.split(',');
+      _selectedProjects = projectIds
+          .where((id) => id.isNotEmpty)
+          .map((id) => int.tryParse(id))
+          .where((id) => id != null)
+          .map((id) => id!)
+          .toSet();
+    }
+
+    // Parse assignee filters
+    if (uri.queryParameters['assignees'] != null) {
+      final assigneeIds = uri.queryParameters['assignees']!.split(',');
+      _selectedAssignees = assigneeIds
+          .where((id) => id.isNotEmpty)
+          .map((id) => int.tryParse(id))
+          .where((id) => id != null)
+          .map((id) => id!)
+          .toSet();
+    }
+
+    // Parse creator filters
+    if (uri.queryParameters['creators'] != null) {
+      final creatorIds = uri.queryParameters['creators']!.split(',');
+      _selectedCreators = creatorIds
+          .where((id) => id.isNotEmpty)
+          .map((id) => int.tryParse(id))
+          .where((id) => id != null)
+          .map((id) => id!)
+          .toSet();
+    }
+
+    // Parse status filters
+    if (uri.queryParameters['statuses'] != null) {
+      _selectedStatuses = uri.queryParameters['statuses']!.split(',').toSet();
+    }
+
+    // Parse priority filters
+    if (uri.queryParameters['priorities'] != null) {
+      _selectedPriorities =
+          uri.queryParameters['priorities']!.split(',').toSet();
+    }
+
+    // Parse tag filters
+    if (uri.queryParameters['tags'] != null) {
+      _selectedTags = uri.queryParameters['tags']!.split(',').toSet();
+    }
+  }
+
+  void _updateUrlFilters() {
+    final Map<String, String> queryParams = {};
+
+    if (_selectedProjects.isNotEmpty) {
+      queryParams['projects'] = _selectedProjects.join(',');
+    }
+    if (_selectedAssignees.isNotEmpty) {
+      queryParams['assignees'] = _selectedAssignees.join(',');
+    }
+    if (_selectedCreators.isNotEmpty) {
+      queryParams['creators'] = _selectedCreators.join(',');
+    }
+    if (_selectedStatuses.isNotEmpty) {
+      queryParams['statuses'] = _selectedStatuses.join(',');
+    }
+    if (_selectedPriorities.isNotEmpty) {
+      queryParams['priorities'] = _selectedPriorities.join(',');
+    }
+    if (_selectedTags.isNotEmpty) {
+      queryParams['tags'] = _selectedTags.join(',');
+    }
+
+    final uri = Uri(
+        path: '/issues',
+        queryParameters: queryParams.isEmpty ? null : queryParams);
+    context.go(uri.toString());
   }
 
   Future<void> _loadData() async {
@@ -549,6 +643,46 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
       _selectedTags.clear();
       _selectedPriorities.clear();
     });
+    _updateUrlFilters();
+  }
+
+  void _copyFilteredUrl() {
+    final Map<String, String> queryParams = {};
+
+    if (_selectedProjects.isNotEmpty) {
+      queryParams['projects'] = _selectedProjects.join(',');
+    }
+    if (_selectedAssignees.isNotEmpty) {
+      queryParams['assignees'] = _selectedAssignees.join(',');
+    }
+    if (_selectedCreators.isNotEmpty) {
+      queryParams['creators'] = _selectedCreators.join(',');
+    }
+    if (_selectedStatuses.isNotEmpty) {
+      queryParams['statuses'] = _selectedStatuses.join(',');
+    }
+    if (_selectedPriorities.isNotEmpty) {
+      queryParams['priorities'] = _selectedPriorities.join(',');
+    }
+    if (_selectedTags.isNotEmpty) {
+      queryParams['tags'] = _selectedTags.join(',');
+    }
+
+    final uri = Uri(
+        path: '/issues',
+        queryParameters: queryParams.isEmpty ? null : queryParams);
+    final url = uri.toString();
+
+    // Copy to clipboard
+    Clipboard.setData(ClipboardData(text: url));
+
+    // Show snackbar
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Filtered URL copied to clipboard!'),
+        duration: Duration(seconds: 2),
+      ),
+    );
   }
 
   bool _hasActiveFilters() {
@@ -618,7 +752,7 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
                   ),
                 ),
               ),
-              if (_hasActiveFilters())
+              if (_hasActiveFilters()) ...[
                 TextButton.icon(
                   onPressed: _clearAllFilters,
                   icon: const Icon(Icons.clear, size: 14),
@@ -630,6 +764,19 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
                     ),
                   ),
                 ),
+                const SizedBox(width: 8),
+                TextButton.icon(
+                  onPressed: _copyFilteredUrl,
+                  icon: const Icon(Icons.copy, size: 14),
+                  label: const Text('Copy URL', style: TextStyle(fontSize: 12)),
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
           // Active filters chips
@@ -648,7 +795,10 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
       Icons.folder,
       _projects.map((p) => FilterOption(p.id, p.name)).toList(),
       _selectedProjects,
-      (selected) => setState(() => _selectedProjects = selected),
+      (selected) {
+        setState(() => _selectedProjects = selected);
+        _updateUrlFilters();
+      },
     );
   }
 
@@ -660,7 +810,10 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
           .map((s) => FilterOption(s, s.replaceAll('_', ' ').toUpperCase()))
           .toList(),
       _selectedStatuses,
-      (selected) => setState(() => _selectedStatuses = selected),
+      (selected) {
+        setState(() => _selectedStatuses = selected);
+        _updateUrlFilters();
+      },
     );
   }
 
@@ -672,7 +825,10 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
           .map((p) => FilterOption(p, p.toUpperCase()))
           .toList(),
       _selectedPriorities,
-      (selected) => setState(() => _selectedPriorities = selected),
+      (selected) {
+        setState(() => _selectedPriorities = selected);
+        _updateUrlFilters();
+      },
     );
   }
 
@@ -682,7 +838,10 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
       Icons.label,
       _getUniqueTags().map((t) => FilterOption(t, t)).toList(),
       _selectedTags,
-      (selected) => setState(() => _selectedTags = selected),
+      (selected) {
+        setState(() => _selectedTags = selected);
+        _updateUrlFilters();
+      },
     );
   }
 
@@ -697,7 +856,10 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
       Icons.person,
       creators,
       _selectedCreators,
-      (selected) => setState(() => _selectedCreators = selected),
+      (selected) {
+        setState(() => _selectedCreators = selected);
+        _updateUrlFilters();
+      },
     );
   }
 
@@ -712,7 +874,10 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
       Icons.assignment_ind,
       assignees,
       _selectedAssignees,
-      (selected) => setState(() => _selectedAssignees = selected),
+      (selected) {
+        setState(() => _selectedAssignees = selected);
+        _updateUrlFilters();
+      },
     );
   }
 
@@ -727,8 +892,10 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
     final displayText = selectedCount == 0
         ? title
         : selectedCount == 1
-        ? options.firstWhere((opt) => selectedValues.contains(opt.value)).label
-        : '$title ($selectedCount)';
+            ? options
+                .firstWhere((opt) => selectedValues.contains(opt.value))
+                .label
+            : '$title ($selectedCount)';
 
     return PopupMenuButton<T>(
       child: Container(
@@ -797,9 +964,8 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
                 Icon(
                   isSelected ? Icons.check_box : Icons.check_box_outline_blank,
                   size: 16,
-                  color: isSelected
-                      ? const Color(0xFF667eea)
-                      : Colors.grey[600],
+                  color:
+                      isSelected ? const Color(0xFF667eea) : Colors.grey[600],
                 ),
                 const SizedBox(width: 8),
                 Expanded(
@@ -810,9 +976,8 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
                       color: isSelected
                           ? const Color(0xFF667eea)
                           : Colors.grey[700],
-                      fontWeight: isSelected
-                          ? FontWeight.w500
-                          : FontWeight.normal,
+                      fontWeight:
+                          isSelected ? FontWeight.w500 : FontWeight.normal,
                     ),
                   ),
                 ),
@@ -914,6 +1079,12 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
               )
             : null,
         actions: [
+          if (_hasActiveFilters())
+            IconButton(
+              icon: const Icon(Icons.share),
+              onPressed: _copyFilteredUrl,
+              tooltip: 'Copy filtered URL',
+            ),
           IconButton(icon: const Icon(Icons.refresh), onPressed: _loadData),
         ],
       ),
@@ -927,291 +1098,320 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : _isError
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(
-                          Icons.error_outline,
-                          size: 64,
-                          color: Colors.red,
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(
+                              Icons.error_outline,
+                              size: 64,
+                              color: Colors.red,
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'Error loading issues',
+                              style: Theme.of(context).textTheme.headlineSmall,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              _errorMessage,
+                              style: Theme.of(context).textTheme.bodyMedium,
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 16),
+                            ElevatedButton(
+                              onPressed: _loadData,
+                              child: const Text('Retry'),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Error loading issues',
-                          style: Theme.of(context).textTheme.headlineSmall,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          _errorMessage,
-                          style: Theme.of(context).textTheme.bodyMedium,
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: _loadData,
-                          child: const Text('Retry'),
-                        ),
-                      ],
-                    ),
-                  )
-                : _issues.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(
-                          Icons.bug_report,
-                          size: 64,
-                          color: Colors.grey,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'No issues found',
-                          style: Theme.of(context).textTheme.headlineSmall,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Create your first issue to get started',
-                          style: Theme.of(context).textTheme.bodyMedium,
-                        ),
-                      ],
-                    ),
-                  )
-                : _getFilteredIssues().isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(
-                          Icons.filter_list,
-                          size: 64,
-                          color: Colors.grey,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'No issues match your filters',
-                          style: Theme.of(context).textTheme.headlineSmall,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Try adjusting your filter criteria',
-                          style: Theme.of(context).textTheme.bodyMedium,
-                        ),
-                        const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: _clearAllFilters,
-                          child: const Text('Clear All Filters'),
-                        ),
-                      ],
-                    ),
-                  )
-                : RefreshIndicator(
-                    onRefresh: _loadAllIssues,
-                    child: ListView.builder(
-                      padding: const EdgeInsets.all(16),
-                      itemCount: _getFilteredIssues().length,
-                      itemBuilder: (context, index) {
-                        final issue = _getFilteredIssues()[index];
-                        return Card(
-                          margin: const EdgeInsets.only(bottom: 16),
-                          child: ListTile(
-                            contentPadding: const EdgeInsets.all(16),
-                            title: Row(
+                      )
+                    : _issues.isEmpty
+                        ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Expanded(
-                                  child: Text(
-                                    issue.title,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16,
-                                    ),
-                                  ),
+                                const Icon(
+                                  Icons.bug_report,
+                                  size: 64,
+                                  color: Colors.grey,
                                 ),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: _getPriorityColor(issue.priority),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Text(
-                                    issue.priority.toUpperCase(),
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'No issues found',
+                                  style:
+                                      Theme.of(context).textTheme.headlineSmall,
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Create your first issue to get started',
+                                  style: Theme.of(context).textTheme.bodyMedium,
                                 ),
                               ],
                             ),
-                            subtitle: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                // Project name
-                                Row(
+                          )
+                        : _getFilteredIssues().isEmpty
+                            ? Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    Icon(
-                                      Icons.folder,
-                                      size: 14,
-                                      color: Colors.grey[600],
+                                    const Icon(
+                                      Icons.filter_list,
+                                      size: 64,
+                                      color: Colors.grey,
                                     ),
-                                    const SizedBox(width: 4),
+                                    const SizedBox(height: 16),
                                     Text(
-                                      issue.projectName,
+                                      'No issues match your filters',
                                       style: Theme.of(context)
                                           .textTheme
-                                          .bodySmall
-                                          ?.copyWith(
-                                            color: const Color(0xFF667eea),
-                                            fontWeight: FontWeight.bold,
-                                          ),
+                                          .headlineSmall,
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      'Try adjusting your filter criteria',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyMedium,
+                                    ),
+                                    const SizedBox(height: 16),
+                                    ElevatedButton(
+                                      onPressed: _clearAllFilters,
+                                      child: const Text('Clear All Filters'),
                                     ),
                                   ],
                                 ),
-                                const SizedBox(height: 8),
-                                if (issue.description.isNotEmpty) ...[
-                                  Text(
-                                    issue.description,
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: Theme.of(
-                                      context,
-                                    ).textTheme.bodyMedium,
-                                  ),
-                                  const SizedBox(height: 8),
-                                ],
-                                Row(
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 8,
-                                        vertical: 4,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: _getStatusColor(issue.status),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: Text(
-                                        issue.status
-                                            .replaceAll('_', ' ')
-                                            .toUpperCase(),
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.bold,
+                              )
+                            : RefreshIndicator(
+                                onRefresh: _loadAllIssues,
+                                child: ListView.builder(
+                                  padding: const EdgeInsets.all(16),
+                                  itemCount: _getFilteredIssues().length,
+                                  itemBuilder: (context, index) {
+                                    final issue = _getFilteredIssues()[index];
+                                    return Card(
+                                      margin: const EdgeInsets.only(bottom: 16),
+                                      child: ListTile(
+                                        contentPadding:
+                                            const EdgeInsets.all(16),
+                                        title: Row(
+                                          children: [
+                                            Expanded(
+                                              child: Text(
+                                                issue.title,
+                                                style: const TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 16,
+                                                ),
+                                              ),
+                                            ),
+                                            Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                horizontal: 8,
+                                                vertical: 4,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                color: _getPriorityColor(
+                                                    issue.priority),
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                              ),
+                                              child: Text(
+                                                issue.priority.toUpperCase(),
+                                                style: const TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        subtitle: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            // Project name
+                                            Row(
+                                              children: [
+                                                Icon(
+                                                  Icons.folder,
+                                                  size: 14,
+                                                  color: Colors.grey[600],
+                                                ),
+                                                const SizedBox(width: 4),
+                                                Text(
+                                                  issue.projectName,
+                                                  style: Theme.of(context)
+                                                      .textTheme
+                                                      .bodySmall
+                                                      ?.copyWith(
+                                                        color: const Color(
+                                                            0xFF667eea),
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                      ),
+                                                ),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 8),
+                                            if (issue
+                                                .description.isNotEmpty) ...[
+                                              Text(
+                                                issue.description,
+                                                maxLines: 2,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: Theme.of(
+                                                  context,
+                                                ).textTheme.bodyMedium,
+                                              ),
+                                              const SizedBox(height: 8),
+                                            ],
+                                            Row(
+                                              children: [
+                                                Container(
+                                                  padding: const EdgeInsets
+                                                      .symmetric(
+                                                    horizontal: 8,
+                                                    vertical: 4,
+                                                  ),
+                                                  decoration: BoxDecoration(
+                                                    color: _getStatusColor(
+                                                        issue.status),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            12),
+                                                  ),
+                                                  child: Text(
+                                                    issue.status
+                                                        .replaceAll('_', ' ')
+                                                        .toUpperCase(),
+                                                    style: const TextStyle(
+                                                      color: Colors.white,
+                                                      fontSize: 10,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 8),
+                                                if (issue.tags.isNotEmpty) ...[
+                                                  Icon(
+                                                    Icons.label,
+                                                    size: 14,
+                                                    color: Colors.grey[600],
+                                                  ),
+                                                  const SizedBox(width: 4),
+                                                  Text(
+                                                    issue.tags,
+                                                    style: Theme.of(context)
+                                                        .textTheme
+                                                        .bodySmall
+                                                        ?.copyWith(
+                                                            color: Colors
+                                                                .grey[600]),
+                                                  ),
+                                                ],
+                                              ],
+                                            ),
+                                            const SizedBox(height: 8),
+                                            Row(
+                                              children: [
+                                                Icon(
+                                                  Icons.person,
+                                                  size: 14,
+                                                  color: Colors.grey[600],
+                                                ),
+                                                const SizedBox(width: 4),
+                                                Text(
+                                                  'By ${issue.creatorName}',
+                                                  style: Theme.of(context)
+                                                      .textTheme
+                                                      .bodySmall
+                                                      ?.copyWith(
+                                                          color:
+                                                              Colors.grey[600]),
+                                                ),
+                                                if (issue.assigneeName !=
+                                                    null) ...[
+                                                  const SizedBox(width: 16),
+                                                  Icon(
+                                                    Icons.assignment_ind,
+                                                    size: 14,
+                                                    color: Colors.grey[600],
+                                                  ),
+                                                  const SizedBox(width: 4),
+                                                  Text(
+                                                    'Assigned to ${issue.assigneeName}',
+                                                    style: Theme.of(context)
+                                                        .textTheme
+                                                        .bodySmall
+                                                        ?.copyWith(
+                                                            color: Colors
+                                                                .grey[600]),
+                                                  ),
+                                                ],
+                                              ],
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              'Created: ${issue.createdAt}',
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .bodySmall
+                                                  ?.copyWith(
+                                                      color: Colors.grey[600]),
+                                            ),
+                                          ],
+                                        ),
+                                        trailing: PopupMenuButton<String>(
+                                          onSelected: (value) {
+                                            switch (value) {
+                                              case 'edit':
+                                                _editIssue(issue);
+                                                break;
+                                              case 'delete':
+                                                _deleteIssue(issue);
+                                                break;
+                                            }
+                                          },
+                                          itemBuilder: (context) => [
+                                            const PopupMenuItem(
+                                              value: 'edit',
+                                              child: Row(
+                                                children: [
+                                                  Icon(Icons.edit),
+                                                  SizedBox(width: 8),
+                                                  Text('Edit'),
+                                                ],
+                                              ),
+                                            ),
+                                            const PopupMenuItem(
+                                              value: 'delete',
+                                              child: Row(
+                                                children: [
+                                                  Icon(Icons.delete,
+                                                      color: Colors.red),
+                                                  SizedBox(width: 8),
+                                                  Text(
+                                                    'Delete',
+                                                    style: TextStyle(
+                                                        color: Colors.red),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    if (issue.tags.isNotEmpty) ...[
-                                      Icon(
-                                        Icons.label,
-                                        size: 14,
-                                        color: Colors.grey[600],
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        issue.tags,
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodySmall
-                                            ?.copyWith(color: Colors.grey[600]),
-                                      ),
-                                    ],
-                                  ],
+                                    );
+                                  },
                                 ),
-                                const SizedBox(height: 8),
-                                Row(
-                                  children: [
-                                    Icon(
-                                      Icons.person,
-                                      size: 14,
-                                      color: Colors.grey[600],
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      'By ${issue.creatorName}',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodySmall
-                                          ?.copyWith(color: Colors.grey[600]),
-                                    ),
-                                    if (issue.assigneeName != null) ...[
-                                      const SizedBox(width: 16),
-                                      Icon(
-                                        Icons.assignment_ind,
-                                        size: 14,
-                                        color: Colors.grey[600],
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        'Assigned to ${issue.assigneeName}',
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodySmall
-                                            ?.copyWith(color: Colors.grey[600]),
-                                      ),
-                                    ],
-                                  ],
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  'Created: ${issue.createdAt}',
-                                  style: Theme.of(context).textTheme.bodySmall
-                                      ?.copyWith(color: Colors.grey[600]),
-                                ),
-                              ],
-                            ),
-                            trailing: PopupMenuButton<String>(
-                              onSelected: (value) {
-                                switch (value) {
-                                  case 'edit':
-                                    _editIssue(issue);
-                                    break;
-                                  case 'delete':
-                                    _deleteIssue(issue);
-                                    break;
-                                }
-                              },
-                              itemBuilder: (context) => [
-                                const PopupMenuItem(
-                                  value: 'edit',
-                                  child: Row(
-                                    children: [
-                                      Icon(Icons.edit),
-                                      SizedBox(width: 8),
-                                      Text('Edit'),
-                                    ],
-                                  ),
-                                ),
-                                const PopupMenuItem(
-                                  value: 'delete',
-                                  child: Row(
-                                    children: [
-                                      Icon(Icons.delete, color: Colors.red),
-                                      SizedBox(width: 8),
-                                      Text(
-                                        'Delete',
-                                        style: TextStyle(color: Colors.red),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
+                              ),
           ),
         ],
       ),
-
       floatingActionButton: FloatingActionButton(
         onPressed: _createIssue,
         backgroundColor: const Color(0xFF667eea),
