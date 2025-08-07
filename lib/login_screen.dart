@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'projects_page.dart';
+import 'main_layout.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -49,10 +49,10 @@ class _LoginScreenState extends State<LoginScreen> {
               backgroundColor: Colors.green,
             ),
           );
-          // Navigate to projects page
+          // Navigate to main layout
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => const ProjectsPage()),
+            MaterialPageRoute(builder: (context) => const MainLayout()),
           );
         }
       } else {
@@ -155,6 +155,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       // Username Field
                       TextFormField(
                         controller: _usernameController,
+                        textInputAction: TextInputAction.next,
                         decoration: InputDecoration(
                           labelText: 'Username',
                           prefixIcon: const Icon(Icons.person_outline),
@@ -182,6 +183,12 @@ class _LoginScreenState extends State<LoginScreen> {
                       TextFormField(
                         controller: _passwordController,
                         obscureText: _obscurePassword,
+                        textInputAction: TextInputAction.done,
+                        onFieldSubmitted: (value) {
+                          if (!_isLoading) {
+                            _login();
+                          }
+                        },
                         decoration: InputDecoration(
                           labelText: 'Password',
                           prefixIcon: const Icon(Icons.lock_outline),

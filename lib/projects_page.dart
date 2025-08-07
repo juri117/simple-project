@@ -255,9 +255,17 @@ class _ProjectsPageState extends State<ProjectsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Project Management'),
+        title: const Text('Projects'),
         backgroundColor: const Color(0xFF667eea),
         foregroundColor: Colors.white,
+        leading: MediaQuery.of(context).size.width < 768
+            ? IconButton(
+                icon: const Icon(Icons.menu),
+                onPressed: () {
+                  Scaffold.of(context).openDrawer();
+                },
+              )
+            : null,
         actions: [
           IconButton(icon: const Icon(Icons.refresh), onPressed: _loadProjects),
         ],

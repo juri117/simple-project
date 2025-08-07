@@ -17,34 +17,55 @@ try {
     
     switch ($_SERVER['REQUEST_METHOD']) {
         case 'GET':
-            // Get issues for a specific project
+            // Get issues - either for a specific project or all issues
             $project_id = isset($_GET['project_id']) ? (int)$_GET['project_id'] : null;
             
-            if (!$project_id) {
-                http_response_code(400);
-                echo json_encode(['error' => 'Project ID is required']);
-                exit();
+            if ($project_id) {
+                // Get issues for a specific project
+                $stmt = $pdo->prepare("
+                    SELECT 
+                        i.id, i.project_id, i.title, i.description, i.status, i.priority, i.tags,
+                        i.created_at, i.updated_at,
+                        c.username as creator_name,
+                        a.username as assignee_name
+                    FROM issues i
+                    LEFT JOIN users c ON i.creator_id = c.id
+                    LEFT JOIN users a ON i.assignee_id = a.id
+                    WHERE i.project_id = ? AND i.deleted = 0
+                    ORDER BY 
+                        CASE i.priority 
+                            WHEN 'high' THEN 1 
+                            WHEN 'medium' THEN 2 
+                            WHEN 'low' THEN 3 
+                        END,
+                        i.created_at DESC
+                ");
+                $stmt->execute([$project_id]);
+            } else {
+                // Get all issues from all projects
+                $stmt = $pdo->prepare("
+                    SELECT 
+                        i.id, i.project_id, i.title, i.description, i.status, i.priority, i.tags,
+                        i.created_at, i.updated_at,
+                        c.username as creator_name,
+                        a.username as assignee_name,
+                        p.name as project_name
+                    FROM issues i
+                    LEFT JOIN users c ON i.creator_id = c.id
+                    LEFT JOIN users a ON i.assignee_id = a.id
+                    LEFT JOIN projects p ON i.project_id = p.id
+                    WHERE i.deleted = 0
+                    ORDER BY 
+                        CASE i.priority 
+                            WHEN 'high' THEN 1 
+                            WHEN 'medium' THEN 2 
+                            WHEN 'low' THEN 3 
+                        END,
+                        i.created_at DESC
+                ");
+                $stmt->execute();
             }
             
-            $stmt = $pdo->prepare("
-                SELECT 
-                    i.id, i.project_id, i.title, i.description, i.status, i.priority, i.tags,
-                    i.created_at, i.updated_at,
-                    c.username as creator_name,
-                    a.username as assignee_name
-                FROM issues i
-                LEFT JOIN users c ON i.creator_id = c.id
-                LEFT JOIN users a ON i.assignee_id = a.id
-                WHERE i.project_id = ? AND i.deleted = 0
-                ORDER BY 
-                    CASE i.priority 
-                        WHEN 'high' THEN 1 
-                        WHEN 'medium' THEN 2 
-                        WHEN 'low' THEN 3 
-                    END,
-                    i.created_at DESC
-            ");
-            $stmt->execute([$project_id]);
             $issues = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
             echo json_encode([
