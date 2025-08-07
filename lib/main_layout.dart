@@ -1,18 +1,27 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'projects_page.dart';
 import 'all_issues_page.dart';
 
 class MainLayout extends StatefulWidget {
-  const MainLayout({super.key});
+  final int initialIndex;
+
+  const MainLayout({super.key, this.initialIndex = 0});
 
   @override
   State<MainLayout> createState() => _MainLayoutState();
 }
 
 class _MainLayoutState extends State<MainLayout> {
-  int _selectedIndex = 0;
+  late int _selectedIndex;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   int? _selectedProjectId;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedIndex = widget.initialIndex;
+  }
 
   final List<NavigationItem> _navigationItems = [
     NavigationItem(icon: Icons.folder, label: 'Projects', index: 0),
@@ -20,15 +29,34 @@ class _MainLayoutState extends State<MainLayout> {
   ];
 
   List<Widget> get _pages => [
-    ProjectsPage(onProjectTap: _navigateToProjectIssues),
-    AllIssuesPage(initialProjectId: _selectedProjectId),
-  ];
+        ProjectsPage(onProjectTap: _navigateToProjectIssues),
+        AllIssuesPage(initialProjectId: _selectedProjectId),
+      ];
 
   void _navigateToProjectIssues(int projectId) {
     setState(() {
       _selectedProjectId = projectId;
       _selectedIndex = 1; // Switch to All Issues page
     });
+    // Update URL when navigating to issues
+    context.go('/issues');
+  }
+
+  void _navigateToPage(int index) {
+    setState(() {
+      _selectedIndex = index;
+      // Clear project filter when navigating to All Issues from sidebar
+      if (index == 1) {
+        _selectedProjectId = null;
+      }
+    });
+
+    // Update URL based on navigation
+    if (index == 0) {
+      context.go('/projects');
+    } else if (index == 1) {
+      context.go('/issues');
+    }
   }
 
   @override
@@ -106,19 +134,12 @@ class _MainLayoutState extends State<MainLayout> {
                       item.label,
                       style: TextStyle(
                         color: isSelected ? Colors.white : Colors.white70,
-                        fontWeight: isSelected
-                            ? FontWeight.bold
-                            : FontWeight.normal,
+                        fontWeight:
+                            isSelected ? FontWeight.bold : FontWeight.normal,
                       ),
                     ),
                     onTap: () {
-                      setState(() {
-                        _selectedIndex = item.index;
-                        // Clear project filter when navigating to All Issues from sidebar
-                        if (item.index == 1) {
-                          _selectedProjectId = null;
-                        }
-                      });
+                      _navigateToPage(item.index);
                     },
                   ),
                 );
@@ -167,9 +188,8 @@ class _MainLayoutState extends State<MainLayout> {
                 return ListTile(
                   leading: Icon(
                     item.icon,
-                    color: isSelected
-                        ? const Color(0xFF667eea)
-                        : Colors.grey[600],
+                    color:
+                        isSelected ? const Color(0xFF667eea) : Colors.grey[600],
                   ),
                   title: Text(
                     item.label,
@@ -177,20 +197,13 @@ class _MainLayoutState extends State<MainLayout> {
                       color: isSelected
                           ? const Color(0xFF667eea)
                           : Colors.grey[800],
-                      fontWeight: isSelected
-                          ? FontWeight.bold
-                          : FontWeight.normal,
+                      fontWeight:
+                          isSelected ? FontWeight.bold : FontWeight.normal,
                     ),
                   ),
                   selected: isSelected,
                   onTap: () {
-                    setState(() {
-                      _selectedIndex = item.index;
-                      // Clear project filter when navigating to All Issues from drawer
-                      if (item.index == 1) {
-                        _selectedProjectId = null;
-                      }
-                    });
+                    _navigateToPage(item.index);
                     Navigator.of(context).pop(); // Close drawer
                   },
                 );
