@@ -12,13 +12,24 @@ class MainLayout extends StatefulWidget {
 class _MainLayoutState extends State<MainLayout> {
   int _selectedIndex = 0;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-
-  final List<Widget> _pages = [const ProjectsPage(), const AllIssuesPage()];
+  int? _selectedProjectId;
 
   final List<NavigationItem> _navigationItems = [
     NavigationItem(icon: Icons.folder, label: 'Projects', index: 0),
     NavigationItem(icon: Icons.bug_report, label: 'All Issues', index: 1),
   ];
+
+  List<Widget> get _pages => [
+    ProjectsPage(onProjectTap: _navigateToProjectIssues),
+    AllIssuesPage(initialProjectId: _selectedProjectId),
+  ];
+
+  void _navigateToProjectIssues(int projectId) {
+    setState(() {
+      _selectedProjectId = projectId;
+      _selectedIndex = 1; // Switch to All Issues page
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -103,6 +114,10 @@ class _MainLayoutState extends State<MainLayout> {
                     onTap: () {
                       setState(() {
                         _selectedIndex = item.index;
+                        // Clear project filter when navigating to All Issues from sidebar
+                        if (item.index == 1) {
+                          _selectedProjectId = null;
+                        }
                       });
                     },
                   ),
@@ -171,6 +186,10 @@ class _MainLayoutState extends State<MainLayout> {
                   onTap: () {
                     setState(() {
                       _selectedIndex = item.index;
+                      // Clear project filter when navigating to All Issues from drawer
+                      if (item.index == 1) {
+                        _selectedProjectId = null;
+                      }
                     });
                     Navigator.of(context).pop(); // Close drawer
                   },

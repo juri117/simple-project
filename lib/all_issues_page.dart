@@ -97,7 +97,9 @@ class User {
 }
 
 class AllIssuesPage extends StatefulWidget {
-  const AllIssuesPage({super.key});
+  final int? initialProjectId;
+
+  const AllIssuesPage({super.key, this.initialProjectId});
 
   @override
   State<AllIssuesPage> createState() => _AllIssuesPageState();
@@ -122,6 +124,10 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
   @override
   void initState() {
     super.initState();
+    // Set initial project filter if provided
+    if (widget.initialProjectId != null) {
+      _selectedProjects.add(widget.initialProjectId!);
+    }
     _loadData();
   }
 
@@ -554,6 +560,21 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
         _selectedPriorities.isNotEmpty;
   }
 
+  String _getProjectName(int projectId) {
+    final project = _projects.firstWhere(
+      (p) => p.id == projectId,
+      orElse: () => Project(
+        id: projectId,
+        name: 'Unknown Project',
+        description: '',
+        status: '',
+        createdAt: '',
+        updatedAt: '',
+      ),
+    );
+    return project.name;
+  }
+
   Widget _buildCompactFilterPanel() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -877,7 +898,11 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('All Issues'),
+        title: Text(
+          _selectedProjects.isNotEmpty && _selectedProjects.length == 1
+              ? _getProjectName(_selectedProjects.first)
+              : 'All Issues',
+        ),
         backgroundColor: const Color(0xFF667eea),
         foregroundColor: Colors.white,
         leading: MediaQuery.of(context).size.width < 768

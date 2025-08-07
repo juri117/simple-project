@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'issues_page.dart';
 
 class Project {
   final int id;
@@ -33,7 +32,9 @@ class Project {
 }
 
 class ProjectsPage extends StatefulWidget {
-  const ProjectsPage({super.key});
+  final Function(int)? onProjectTap;
+
+  const ProjectsPage({super.key, this.onProjectTap});
 
   @override
   State<ProjectsPage> createState() => _ProjectsPageState();
@@ -327,15 +328,9 @@ class _ProjectsPageState extends State<ProjectsPage> {
                     margin: const EdgeInsets.only(bottom: 16),
                     child: InkWell(
                       onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => IssuesPage(
-                              projectId: project.id,
-                              projectName: project.name,
-                            ),
-                          ),
-                        );
+                        if (widget.onProjectTap != null) {
+                          widget.onProjectTap!(project.id);
+                        }
                       },
                       child: ListTile(
                         contentPadding: const EdgeInsets.all(16),
