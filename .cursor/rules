@@ -31,3 +31,4 @@
 - The PHP server must be running for the Flutter app to work
 - All API endpoints return JSON responses
 - everything in the database is soft-deleted (flagged, not removed from database)
+- to backend url is defined in assets/config.json, use this to debug connectivity issues or cors problems

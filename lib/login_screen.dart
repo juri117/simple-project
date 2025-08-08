@@ -28,14 +28,20 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
+      final url = Config.instance.buildApiUrl('login.php');
+      print('Attempting to connect to: $url');
+
       final response = await http.post(
-        Uri.parse(Config.instance.buildApiUrl('login.php')),
+        Uri.parse(url),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'username': _usernameController.text,
           'password': _passwordController.text,
         }),
       );
+
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
 
       final data = json.decode(response.body);
 

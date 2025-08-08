@@ -1,6 +1,6 @@
 {
-    "backend": {
-      "url": "http://localhost",
-      "port": 8000
-    }
+  "backend": {
+    "url": "http://sp-be.diaven.de",
+    "url__": "http://localhost:8000"
+  }
 }

@@ -62,8 +62,11 @@ class _ProjectsPageState extends State<ProjectsPage> {
     }
 
     try {
+      final url = Config.instance.buildApiUrl('projects.php');
+      print('Projects: Attempting to fetch from: $url');
+
       final response = await http.get(
-        Uri.parse(Config.instance.buildApiUrl('projects.php')),
+        Uri.parse(url),
         headers: {'Content-Type': 'application/json'},
       );
 
@@ -116,8 +119,11 @@ class _ProjectsPageState extends State<ProjectsPage> {
 
     if (result != null) {
       try {
+        final url = Config.instance.buildApiUrl('projects.php');
+        print('Projects: Creating project at: $url');
+
         final response = await http.post(
-          Uri.parse(Config.instance.buildApiUrl('projects.php')),
+          Uri.parse(url),
           headers: {'Content-Type': 'application/json'},
           body: json.encode(result),
         );
@@ -163,8 +169,11 @@ class _ProjectsPageState extends State<ProjectsPage> {
 
     if (result != null) {
       try {
+        final url = Config.instance.buildApiUrl('projects.php');
+        print('Projects: Updating project at: $url');
+
         final response = await http.put(
-          Uri.parse(Config.instance.buildApiUrl('projects.php')),
+          Uri.parse(url),
           headers: {'Content-Type': 'application/json'},
           body: json.encode(result),
         );
@@ -224,8 +233,11 @@ class _ProjectsPageState extends State<ProjectsPage> {
 
     if (confirmed == true) {
       try {
+        final url = Config.instance.buildApiUrl('projects.php');
+        print('Projects: Deleting project at: $url');
+
         final response = await http.delete(
-          Uri.parse(Config.instance.buildApiUrl('projects.php')),
+          Uri.parse(url),
           headers: {'Content-Type': 'application/json'},
           body: json.encode({'id': project.id}),
         );
