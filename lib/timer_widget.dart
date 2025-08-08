@@ -22,13 +22,19 @@ class _TimerWidgetState extends State<TimerWidget> {
   @override
   void initState() {
     super.initState();
-    _loadActiveTimer();
+    // Add a small delay to ensure session is properly initialized
+    Future.delayed(const Duration(milliseconds: 200), () {
+      if (mounted) {
+        _loadActiveTimer();
+      }
+    });
     _subscribeToTimerUpdates();
   }
 
   void _loadActiveTimer() async {
     if (UserSession.instance.isLoggedIn &&
-        UserSession.instance.userId != null) {
+        UserSession.instance.userId != null &&
+        UserSession.instance.sessionToken != null) {
       await TimeTrackingService.instance
           .getActiveTimer(UserSession.instance.userId!);
     }

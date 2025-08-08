@@ -1,4 +1,7 @@
 <?php
+require_once 'session_manager.php';
+require_once 'db_helper.php';
+
 // CORS headers
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
@@ -37,9 +40,7 @@ if (empty($username) || empty($password)) {
 }
 
 try {
-    $db_path = 'database.sqlite';
-    $pdo = new PDO("sqlite:$db_path");
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $pdo = DatabaseHelper::getConnection();
     
     // Find user by username
     $stmt = $pdo->prepare("SELECT id, username, password FROM users WHERE username = ?");
@@ -47,15 +48,25 @@ try {
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
     
     if ($user && password_verify($password, $user['password'])) {
-        // Login successful
-        echo json_encode([
-            'success' => true,
-            'message' => 'Login successful',
-            'user' => [
-                'id' => $user['id'],
-                'username' => $user['username']
-            ]
-        ]);
+        // Create session for the user
+        $sessionToken = SessionManager::createSession($user['id'], $user['username']);
+        
+        if ($sessionToken) {
+            // Login successful
+            echo json_encode([
+                'success' => true,
+                'message' => 'Login successful',
+                'user' => [
+                    'id' => $user['id'],
+                    'username' => $user['username']
+                ],
+                'session_token' => $sessionToken
+            ]);
+        } else {
+            // Session creation failed
+            http_response_code(500);
+            echo json_encode(['error' => 'Failed to create session']);
+        }
     } else {
         // Login failed
         http_response_code(401);

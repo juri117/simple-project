@@ -6,6 +6,7 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 import 'dart:convert';
 import 'config.dart';
 import 'time_tracking_service.dart';
+import 'http_service.dart';
 
 class FilterOption<T> {
   final T value;
@@ -450,10 +451,14 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
   }
 
   Future<void> _loadAllIssues() async {
-    final response = await http.get(
-      Uri.parse(Config.instance.buildApiUrl('issues.php')),
-      headers: {'Content-Type': 'application/json'},
+    final response = await HttpService().get(
+      Config.instance.buildApiUrl('issues.php'),
     );
+
+    // Handle authentication errors
+    if (HttpService().handleAuthError(response)) {
+      throw Exception('Authentication required. Please log in again.');
+    }
 
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
@@ -474,10 +479,14 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
   }
 
   Future<void> _loadUsers() async {
-    final response = await http.get(
-      Uri.parse(Config.instance.buildApiUrl('users.php')),
-      headers: {'Content-Type': 'application/json'},
+    final response = await HttpService().get(
+      Config.instance.buildApiUrl('users.php'),
     );
+
+    // Handle authentication errors
+    if (HttpService().handleAuthError(response)) {
+      throw Exception('Authentication required. Please log in again.');
+    }
 
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
@@ -498,10 +507,14 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
   }
 
   Future<void> _loadProjects() async {
-    final response = await http.get(
-      Uri.parse(Config.instance.buildApiUrl('projects.php')),
-      headers: {'Content-Type': 'application/json'},
+    final response = await HttpService().get(
+      Config.instance.buildApiUrl('projects.php'),
     );
+
+    // Handle authentication errors
+    if (HttpService().handleAuthError(response)) {
+      throw Exception('Authentication required. Please log in again.');
+    }
 
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
@@ -603,11 +616,23 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
 
     if (result != null) {
       try {
-        final response = await http.post(
-          Uri.parse(Config.instance.buildApiUrl('issues.php')),
-          headers: {'Content-Type': 'application/json'},
-          body: json.encode(result),
+        final response = await HttpService().post(
+          Config.instance.buildApiUrl('issues.php'),
+          body: result,
         );
+
+        // Handle authentication errors
+        if (HttpService().handleAuthError(response)) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Authentication required. Please log in again.'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+          return;
+        }
 
         if (response.statusCode == 200) {
           final data = json.decode(response.body);
@@ -651,11 +676,23 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
 
     if (result != null) {
       try {
-        final response = await http.put(
-          Uri.parse(Config.instance.buildApiUrl('issues.php')),
-          headers: {'Content-Type': 'application/json'},
-          body: json.encode(result),
+        final response = await HttpService().put(
+          Config.instance.buildApiUrl('issues.php'),
+          body: result,
         );
+
+        // Handle authentication errors
+        if (HttpService().handleAuthError(response)) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Authentication required. Please log in again.'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+          return;
+        }
 
         if (response.statusCode == 200) {
           final data = json.decode(response.body);
@@ -712,11 +749,23 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
 
     if (confirmed == true) {
       try {
-        final response = await http.delete(
-          Uri.parse(Config.instance.buildApiUrl('issues.php')),
-          headers: {'Content-Type': 'application/json'},
-          body: json.encode({'id': issue.id}),
+        final response = await HttpService().delete(
+          Config.instance.buildApiUrl('issues.php'),
+          body: {'id': issue.id},
         );
+
+        // Handle authentication errors
+        if (HttpService().handleAuthError(response)) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Authentication required. Please log in again.'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+          return;
+        }
 
         if (response.statusCode == 200) {
           final data = json.decode(response.body);

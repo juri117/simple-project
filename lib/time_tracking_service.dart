@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:async';
 import 'package:http/http.dart' as http;
 import 'config.dart';
+import 'http_service.dart';
 
 class TimeTrackingService {
   static TimeTrackingService? _instance;
@@ -37,15 +38,19 @@ class TimeTrackingService {
   Future<bool> startTimer(
       int userId, int issueId, String issueTitle, String projectName) async {
     try {
-      final response = await http.post(
-        Uri.parse(Config.instance.buildApiUrl('time_tracking.php')),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({
+      final response = await HttpService().post(
+        Config.instance.buildApiUrl('time_tracking.php'),
+        body: {
           'action': 'start',
           'user_id': userId,
           'issue_id': issueId,
-        }),
+        },
       );
+
+      // Handle authentication errors
+      if (HttpService().handleAuthError(response)) {
+        return false;
+      }
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -71,14 +76,18 @@ class TimeTrackingService {
   // Stop the active timer
   Future<bool> stopTimer(int userId) async {
     try {
-      final response = await http.post(
-        Uri.parse(Config.instance.buildApiUrl('time_tracking.php')),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({
+      final response = await HttpService().post(
+        Config.instance.buildApiUrl('time_tracking.php'),
+        body: {
           'action': 'stop',
           'user_id': userId,
-        }),
+        },
       );
+
+      // Handle authentication errors
+      if (HttpService().handleAuthError(response)) {
+        return false;
+      }
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -99,16 +108,20 @@ class TimeTrackingService {
   // Stop timer manually with custom duration
   Future<bool> stopTimerManual(int userId, int hours, int minutes) async {
     try {
-      final response = await http.post(
-        Uri.parse(Config.instance.buildApiUrl('time_tracking.php')),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({
+      final response = await HttpService().post(
+        Config.instance.buildApiUrl('time_tracking.php'),
+        body: {
           'action': 'stop_manual',
           'user_id': userId,
           'hours': hours,
           'minutes': minutes,
-        }),
+        },
       );
+
+      // Handle authentication errors
+      if (HttpService().handleAuthError(response)) {
+        return false;
+      }
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -129,11 +142,14 @@ class TimeTrackingService {
   // Get active timer from server
   Future<Map<String, dynamic>?> getActiveTimer(int userId) async {
     try {
-      final response = await http.get(
-        Uri.parse(
-            '${Config.instance.buildApiUrl('time_tracking.php')}?action=active&user_id=$userId'),
-        headers: {'Content-Type': 'application/json'},
+      final response = await HttpService().get(
+        '${Config.instance.buildApiUrl('time_tracking.php')}?action=active&user_id=$userId',
       );
+
+      // Handle authentication errors
+      if (HttpService().handleAuthError(response)) {
+        return null;
+      }
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -175,10 +191,12 @@ class TimeTrackingService {
       final uri = Uri.parse(Config.instance.buildApiUrl('time_tracking.php'))
           .replace(queryParameters: queryParams);
 
-      final response = await http.get(
-        uri,
-        headers: {'Content-Type': 'application/json'},
-      );
+      final response = await HttpService().get(uri.toString());
+
+      // Handle authentication errors
+      if (HttpService().handleAuthError(response)) {
+        return null;
+      }
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);

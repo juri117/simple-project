@@ -48,7 +48,9 @@ class _LoginScreenState extends State<LoginScreen> {
       if (response.statusCode == 200 && data['success'] == true) {
         // Login successful - store user session
         final user = data['user'];
-        UserSession.instance.setUser(user['id'], user['username']);
+        final sessionToken = data['session_token'];
+        UserSession.instance
+            .setUser(user['id'], user['username'], sessionToken);
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -59,6 +61,10 @@ class _LoginScreenState extends State<LoginScreen> {
               backgroundColor: Colors.green,
             ),
           );
+
+          // Add a small delay to ensure session is properly stored
+          await Future.delayed(const Duration(milliseconds: 100));
+
           // Navigate to main layout
           context.go('/projects');
         }

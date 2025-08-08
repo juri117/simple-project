@@ -4,6 +4,7 @@ import 'projects_page.dart';
 import 'all_issues_page.dart';
 import 'config.dart';
 import 'timer_widget.dart';
+import 'http_service.dart';
 
 class MainLayout extends StatefulWidget {
   final int initialIndex;
@@ -161,10 +162,10 @@ class _MainLayoutState extends State<MainLayout> {
             width: double.infinity,
             padding: const EdgeInsets.all(20),
             decoration: const BoxDecoration(color: Color(0xFF667eea)),
-            child: const Column(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                const Text(
                   'Project Manager',
                   style: TextStyle(
                     color: Colors.white,
@@ -172,11 +173,37 @@ class _MainLayoutState extends State<MainLayout> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                SizedBox(height: 4),
-                Text(
+                const SizedBox(height: 4),
+                const Text(
                   'Manage your projects and issues',
                   style: TextStyle(color: Colors.white70, fontSize: 12),
                 ),
+                if (UserSession.instance.isLoggedIn) ...[
+                  const SizedBox(height: 8),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.person, color: Colors.white, size: 16),
+                        const SizedBox(width: 4),
+                        Text(
+                          UserSession.instance.username ?? 'User',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -221,6 +248,19 @@ class _MainLayoutState extends State<MainLayout> {
               },
             ),
           ),
+          // Logout button (only show if user is logged in)
+          if (UserSession.instance.isLoggedIn)
+            Container(
+              margin: const EdgeInsets.all(8),
+              child: ListTile(
+                leading: const Icon(Icons.logout, color: Colors.white70),
+                title: const Text(
+                  'Logout',
+                  style: TextStyle(color: Colors.white70),
+                ),
+                onTap: _logout,
+              ),
+            ),
         ],
       ),
     );
@@ -288,6 +328,42 @@ class _MainLayoutState extends State<MainLayout> {
         ],
       ),
     );
+  }
+
+  Future<void> _logout() async {
+    try {
+      final response = await HttpService().post(
+        Config.instance.buildApiUrl('logout.php'),
+      );
+
+      // Clear user session regardless of response
+      UserSession.instance.clearUser();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Logged out successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        // Navigate to login page
+        context.go('/login');
+      }
+    } catch (e) {
+      // Clear user session even if logout request fails
+      UserSession.instance.clearUser();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Logged out (error: $e)'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        // Navigate to login page
+        context.go('/login');
+      }
+    }
   }
 }
 

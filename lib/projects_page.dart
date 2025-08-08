@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'config.dart';
 import 'time_tracking_service.dart';
+import 'http_service.dart';
 
 class Project {
   final int id;
@@ -54,7 +55,13 @@ class _ProjectsPageState extends State<ProjectsPage> {
   @override
   void initState() {
     super.initState();
-    _loadProjects();
+
+    // Add a small delay to ensure session is properly initialized
+    Future.delayed(const Duration(milliseconds: 100), () {
+      if (mounted) {
+        _loadProjects();
+      }
+    });
   }
 
   Future<void> _loadProjects() async {
@@ -69,10 +76,19 @@ class _ProjectsPageState extends State<ProjectsPage> {
       final url = Config.instance.buildApiUrl('projects.php');
       print('Projects: Attempting to fetch from: $url');
 
-      final response = await http.get(
-        Uri.parse(url),
-        headers: {'Content-Type': 'application/json'},
-      );
+      final response = await HttpService().get(url);
+
+      // Handle authentication errors
+      if (HttpService().handleAuthError(response)) {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+            _isError = true;
+            _errorMessage = 'Authentication required. Please log in again.';
+          });
+        }
+        return;
+      }
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -174,11 +190,20 @@ class _ProjectsPageState extends State<ProjectsPage> {
         final url = Config.instance.buildApiUrl('projects.php');
         print('Projects: Creating project at: $url');
 
-        final response = await http.post(
-          Uri.parse(url),
-          headers: {'Content-Type': 'application/json'},
-          body: json.encode(result),
-        );
+        final response = await HttpService().post(url, body: result);
+
+        // Handle authentication errors
+        if (HttpService().handleAuthError(response)) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Authentication required. Please log in again.'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+          return;
+        }
 
         if (response.statusCode == 200) {
           final data = json.decode(response.body);
@@ -224,11 +249,20 @@ class _ProjectsPageState extends State<ProjectsPage> {
         final url = Config.instance.buildApiUrl('projects.php');
         print('Projects: Updating project at: $url');
 
-        final response = await http.put(
-          Uri.parse(url),
-          headers: {'Content-Type': 'application/json'},
-          body: json.encode(result),
-        );
+        final response = await HttpService().put(url, body: result);
+
+        // Handle authentication errors
+        if (HttpService().handleAuthError(response)) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Authentication required. Please log in again.'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+          return;
+        }
 
         if (response.statusCode == 200) {
           final data = json.decode(response.body);
@@ -288,11 +322,21 @@ class _ProjectsPageState extends State<ProjectsPage> {
         final url = Config.instance.buildApiUrl('projects.php');
         print('Projects: Deleting project at: $url');
 
-        final response = await http.delete(
-          Uri.parse(url),
-          headers: {'Content-Type': 'application/json'},
-          body: json.encode({'id': project.id}),
-        );
+        final response =
+            await HttpService().delete(url, body: {'id': project.id});
+
+        // Handle authentication errors
+        if (HttpService().handleAuthError(response)) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Authentication required. Please log in again.'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+          return;
+        }
 
         if (response.statusCode == 200) {
           final data = json.decode(response.body);

@@ -1,4 +1,7 @@
 <?php
+require_once 'auth_middleware.php';
+require_once 'db_helper.php';
+
 // CORS headers
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
@@ -12,10 +15,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit();
 }
 
+// Require authentication
+$session = requireAuth();
+
 try {
-    $db_path = 'database.sqlite';
-    $pdo = new PDO("sqlite:$db_path");
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $pdo = DatabaseHelper::getConnection();
     
     if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         // Get all users

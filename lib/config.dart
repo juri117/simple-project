@@ -12,20 +12,25 @@ class UserSession {
 
   int? _userId;
   String? _username;
+  String? _sessionToken;
 
-  void setUser(int userId, String username) {
+  void setUser(int userId, String username, String sessionToken) {
     _userId = userId;
     _username = username;
+    _sessionToken = sessionToken;
   }
 
   void clearUser() {
     _userId = null;
     _username = null;
+    _sessionToken = null;
   }
 
   int? get userId => _userId;
   String? get username => _username;
-  bool get isLoggedIn => _userId != null && _username != null;
+  String? get sessionToken => _sessionToken;
+  bool get isLoggedIn =>
+      _userId != null && _username != null && _sessionToken != null;
 }
 
 class Config {

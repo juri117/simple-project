@@ -15,6 +15,23 @@ void main() async {
 
 final GoRouter _router = GoRouter(
   initialLocation: '/login',
+  redirect: (context, state) {
+    final isLoggedIn = UserSession.instance.isLoggedIn;
+    final isLoginRoute = state.matchedLocation == '/login';
+
+    // If user is not logged in and trying to access protected routes, redirect to login
+    if (!isLoggedIn && !isLoginRoute) {
+      return '/login';
+    }
+
+    // If user is logged in and trying to access login page, redirect to projects
+    if (isLoggedIn && isLoginRoute) {
+      return '/projects';
+    }
+
+    // No redirect needed
+    return null;
+  },
   routes: [
     GoRoute(
       path: '/login',
