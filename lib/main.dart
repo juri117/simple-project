@@ -22,21 +22,26 @@ final GoRouter _router = GoRouter(
     ),
     GoRoute(
       path: '/projects',
-      builder: (context, state) => const MainLayout(initialIndex: 0),
+      pageBuilder: (context, state) => NoTransitionPage(
+        child: const MainLayout(initialIndex: 0),
+      ),
     ),
     GoRoute(
       path: '/issues',
-      builder: (context, state) {
+      pageBuilder: (context, state) {
         // Check if this is a "My Issues" request (has assignee filter for current user)
         final uri = Uri.parse(state.uri.toString());
         final assignees = uri.queryParameters['assignees'];
         final currentUserId = UserSession.instance.userId?.toString();
 
+        Widget child;
         if (assignees == currentUserId) {
-          return const MainLayout(initialIndex: 2);
+          child = const MainLayout(initialIndex: 2);
         } else {
-          return const MainLayout(initialIndex: 1);
+          child = const MainLayout(initialIndex: 1);
         }
+
+        return NoTransitionPage(child: child);
       },
     ),
     // Redirect root to login
@@ -46,6 +51,22 @@ final GoRouter _router = GoRouter(
     ),
   ],
 );
+
+class NoTransitionPage extends Page {
+  final Widget child;
+
+  const NoTransitionPage({required this.child, super.key});
+
+  @override
+  Route createRoute(BuildContext context) {
+    return PageRouteBuilder(
+      settings: this,
+      pageBuilder: (context, animation, secondaryAnimation) => child,
+      transitionDuration: Duration.zero,
+      reverseTransitionDuration: Duration.zero,
+    );
+  }
+}
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});

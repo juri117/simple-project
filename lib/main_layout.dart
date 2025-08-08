@@ -138,28 +138,9 @@ class _MainLayoutState extends State<MainLayout> {
                       ],
                     ),
                   ),
-                // Main content with smooth transitions (only the page content animates)
+                // Main content with instant transitions (no animation)
                 Expanded(
-                  child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 300),
-                    transitionBuilder:
-                        (Widget child, Animation<double> animation) {
-                      return FadeTransition(
-                        opacity: animation,
-                        child: SlideTransition(
-                          position: Tween<Offset>(
-                            begin: const Offset(0.1, 0),
-                            end: Offset.zero,
-                          ).animate(CurvedAnimation(
-                            parent: animation,
-                            curve: Curves.easeInOut,
-                          )),
-                          child: child,
-                        ),
-                      );
-                    },
-                    child: _pages[_selectedIndex],
-                  ),
+                  child: _pages[_selectedIndex],
                 ),
               ],
             ),
