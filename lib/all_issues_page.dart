@@ -1815,6 +1815,7 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
         onPressed: _createIssue,
         backgroundColor: const Color(0xFF667eea),
         foregroundColor: Colors.white,
+        heroTag: 'issues_fab',
         child: const Icon(Icons.add),
       ),
     );

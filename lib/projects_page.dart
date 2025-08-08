@@ -545,6 +545,7 @@ class _ProjectsPageState extends State<ProjectsPage> {
         onPressed: _createProject,
         backgroundColor: const Color(0xFF667eea),
         foregroundColor: Colors.white,
+        heroTag: 'projects_fab',
         child: const Icon(Icons.add),
       ),
     );

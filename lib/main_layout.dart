@@ -42,7 +42,10 @@ class _MainLayoutState extends State<MainLayout> {
 
   List<Widget> get _pages {
     final pages = [
-      ProjectsPage(onProjectTap: _navigateToProjectIssues),
+      ProjectsPage(
+        key: const ValueKey('projects'),
+        onProjectTap: _navigateToProjectIssues,
+      ),
       AllIssuesPage(
         key: const ValueKey('all-issues'),
         initialProjectId: _selectedProjectId,
@@ -117,9 +120,10 @@ class _MainLayoutState extends State<MainLayout> {
           Expanded(
             child: Column(
               children: [
-                // Timer widget in header
+                // Timer widget in header (static, outside of AnimatedSwitcher)
                 if (UserSession.instance.isLoggedIn)
                   Container(
+                    key: const ValueKey('timer_header'),
                     padding:
                         const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     decoration: BoxDecoration(
@@ -134,8 +138,29 @@ class _MainLayoutState extends State<MainLayout> {
                       ],
                     ),
                   ),
-                // Main content
-                Expanded(child: _pages[_selectedIndex]),
+                // Main content with smooth transitions (only the page content animates)
+                Expanded(
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 300),
+                    transitionBuilder:
+                        (Widget child, Animation<double> animation) {
+                      return FadeTransition(
+                        opacity: animation,
+                        child: SlideTransition(
+                          position: Tween<Offset>(
+                            begin: const Offset(0.1, 0),
+                            end: Offset.zero,
+                          ).animate(CurvedAnimation(
+                            parent: animation,
+                            curve: Curves.easeInOut,
+                          )),
+                          child: child,
+                        ),
+                      );
+                    },
+                    child: _pages[_selectedIndex],
+                  ),
+                ),
               ],
             ),
           ),
