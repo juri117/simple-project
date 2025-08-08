@@ -51,12 +51,15 @@ try {
                         i.created_at, i.updated_at,
                         c.username as creator_name,
                         a.username as assignee_name,
-                        p.name as project_name
+                        p.name as project_name,
+                        COALESCE(SUM(CASE WHEN tt.stop_time IS NOT NULL THEN tt.stop_time - tt.start_time ELSE 0 END), 0) as total_time_seconds
                     FROM issues i
                     LEFT JOIN users c ON i.creator_id = c.id
                     LEFT JOIN users a ON i.assignee_id = a.id
                     LEFT JOIN projects p ON i.project_id = p.id
+                    LEFT JOIN time_tracking tt ON i.id = tt.issue_id
                     WHERE i.deleted = 0
+                    GROUP BY i.id, i.project_id, i.title, i.description, i.status, i.priority, i.tags, i.created_at, i.updated_at, c.username, a.username, p.name
                     ORDER BY 
                         CASE i.priority 
                             WHEN 'high' THEN 1 

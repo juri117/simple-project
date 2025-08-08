@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'config.dart';
+import 'time_tracking_service.dart';
 
 class Project {
   final int id;
@@ -10,6 +11,7 @@ class Project {
   final String status;
   final String createdAt;
   final String updatedAt;
+  final int totalTimeSeconds; // Total time spent on all issues in this project
 
   Project({
     required this.id,
@@ -18,6 +20,7 @@ class Project {
     required this.status,
     required this.createdAt,
     required this.updatedAt,
+    this.totalTimeSeconds = 0,
   });
 
   factory Project.fromJson(Map<String, dynamic> json) {
@@ -28,6 +31,7 @@ class Project {
       status: json['status'],
       createdAt: json['created_at'],
       updatedAt: json['updated_at'],
+      totalTimeSeconds: json['total_time_seconds'] ?? 0,
     );
   }
 }
@@ -78,6 +82,21 @@ class _ProjectsPageState extends State<ProjectsPage> {
               _projects = (data['projects'] as List)
                   .map((project) => Project.fromJson(project))
                   .toList();
+            });
+          }
+
+          // Load time statistics if user is logged in
+          if (UserSession.instance.isLoggedIn) {
+            try {
+              await _loadTimeStats();
+            } catch (e) {
+              // Don't fail the entire load for time stats
+              print('Warning: Failed to load time stats: $e');
+            }
+          }
+
+          if (mounted) {
+            setState(() {
               _isLoading = false;
             });
           }
@@ -108,6 +127,39 @@ class _ProjectsPageState extends State<ProjectsPage> {
           _isLoading = false;
         });
       }
+    }
+  }
+
+  Future<void> _loadTimeStats() async {
+    if (!UserSession.instance.isLoggedIn) return;
+
+    final stats = await TimeTrackingService.instance.getTimeStats(
+      userId: UserSession.instance.userId,
+    );
+
+    if (stats != null && mounted) {
+      // Update projects with time data
+      final projectStats = Map<int, int>.fromEntries(
+        (stats['projects'] as List).map((stat) => MapEntry(
+              stat['project_id'] as int,
+              stat['total_seconds'] as int,
+            )),
+      );
+
+      setState(() {
+        _projects = _projects.map((project) {
+          final timeSpent = projectStats[project.id] ?? 0;
+          return Project(
+            id: project.id,
+            name: project.name,
+            description: project.description,
+            status: project.status,
+            createdAt: project.createdAt,
+            updatedAt: project.updatedAt,
+            totalTimeSeconds: timeSpent,
+          );
+        }).toList();
+      });
     }
   }
 
@@ -415,6 +467,27 @@ class _ProjectsPageState extends State<ProjectsPage> {
                                               ?.copyWith(
                                                   color: Colors.grey[600]),
                                         ),
+                                        if (project.totalTimeSeconds > 0) ...[
+                                          const SizedBox(width: 16),
+                                          Icon(
+                                            Icons.timer,
+                                            size: 12,
+                                            color: Colors.grey[600],
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            TimeTrackingService.instance
+                                                .formatDurationHuman(
+                                                    project.totalTimeSeconds),
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodySmall
+                                                ?.copyWith(
+                                                  color: Colors.grey[600],
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                          ),
+                                        ],
                                         const Spacer(),
                                         Icon(
                                           Icons.arrow_forward_ios,

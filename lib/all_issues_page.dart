@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'dart:convert';
 import 'config.dart';
+import 'time_tracking_service.dart';
 
 class FilterOption<T> {
   final T value;
@@ -55,6 +56,7 @@ class Issue {
   final String creatorName;
   final String? assigneeName;
   final String projectName; // Added project name for all issues view
+  final int totalTimeSeconds; // Total time spent on this issue
 
   Issue({
     required this.id,
@@ -69,6 +71,7 @@ class Issue {
     required this.creatorName,
     this.assigneeName,
     required this.projectName,
+    this.totalTimeSeconds = 0,
   });
 
   factory Issue.fromJson(Map<String, dynamic> json) {
@@ -85,6 +88,7 @@ class Issue {
       creatorName: json['creator_name'],
       assigneeName: json['assignee_name'],
       projectName: json['project_name'] ?? 'Unknown Project',
+      totalTimeSeconds: json['total_time_seconds'] ?? 0,
     );
   }
 }
@@ -416,6 +420,16 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
       errorMsg += '\nFailed to load projects: $e';
     }
 
+    // Load time statistics if user is logged in
+    if (UserSession.instance.isLoggedIn) {
+      try {
+        await _loadTimeStats();
+      } catch (e) {
+        // Don't fail the entire load for time stats
+        print('Warning: Failed to load time stats: $e');
+      }
+    }
+
     if (mounted) {
       setState(() {
         _isLoading = false;
@@ -504,6 +518,80 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
       }
     } else {
       throw Exception('HTTP ${response.statusCode}: ${response.reasonPhrase}');
+    }
+  }
+
+  Future<void> _loadTimeStats() async {
+    if (!UserSession.instance.isLoggedIn) return;
+
+    final stats = await TimeTrackingService.instance.getTimeStats(
+      userId: UserSession.instance.userId,
+    );
+
+    if (stats != null && mounted) {
+      // Update issues with time data
+      final issueStats = Map<int, int>.fromEntries(
+        (stats['issues'] as List).map((stat) => MapEntry(
+              stat['issue_id'] as int,
+              stat['total_seconds'] as int,
+            )),
+      );
+
+      setState(() {
+        _issues = _issues.map((issue) {
+          final timeSpent = issueStats[issue.id] ?? 0;
+          return Issue(
+            id: issue.id,
+            projectId: issue.projectId,
+            title: issue.title,
+            description: issue.description,
+            status: issue.status,
+            priority: issue.priority,
+            tags: issue.tags,
+            createdAt: issue.createdAt,
+            updatedAt: issue.updatedAt,
+            creatorName: issue.creatorName,
+            assigneeName: issue.assigneeName,
+            projectName: issue.projectName,
+            totalTimeSeconds: timeSpent,
+          );
+        }).toList();
+      });
+    }
+  }
+
+  Future<void> _startTimer(Issue issue) async {
+    if (!UserSession.instance.isLoggedIn) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please log in to use time tracking'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    final success = await TimeTrackingService.instance.startTimer(
+      UserSession.instance.userId!,
+      issue.id,
+      issue.title,
+      issue.projectName,
+    );
+
+    if (success && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Timer started for: ${issue.title}'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } else if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to start timer'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -1588,14 +1676,53 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
                                                         ],
                                                       ),
                                                       const SizedBox(height: 4),
-                                                      Text(
-                                                        'Created: ${issue.createdAt}',
-                                                        style: Theme.of(context)
-                                                            .textTheme
-                                                            .bodySmall
-                                                            ?.copyWith(
-                                                                color: Colors
-                                                                    .grey[600]),
+                                                      Row(
+                                                        children: [
+                                                          Text(
+                                                            'Created: ${issue.createdAt}',
+                                                            style: Theme.of(
+                                                                    context)
+                                                                .textTheme
+                                                                .bodySmall
+                                                                ?.copyWith(
+                                                                    color: Colors
+                                                                            .grey[
+                                                                        600]),
+                                                          ),
+                                                          if (issue
+                                                                  .totalTimeSeconds >
+                                                              0) ...[
+                                                            const SizedBox(
+                                                                width: 16),
+                                                            Icon(
+                                                              Icons.timer,
+                                                              size: 12,
+                                                              color: Colors
+                                                                  .grey[600],
+                                                            ),
+                                                            const SizedBox(
+                                                                width: 4),
+                                                            Text(
+                                                              TimeTrackingService
+                                                                  .instance
+                                                                  .formatDurationHuman(
+                                                                      issue
+                                                                          .totalTimeSeconds),
+                                                              style: Theme.of(
+                                                                      context)
+                                                                  .textTheme
+                                                                  .bodySmall
+                                                                  ?.copyWith(
+                                                                    color: Colors
+                                                                            .grey[
+                                                                        600],
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .w500,
+                                                                  ),
+                                                            ),
+                                                          ],
+                                                        ],
                                                       ),
                                                     ],
                                                   ),
@@ -1604,6 +1731,26 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
                                                 // Right side action buttons
                                                 Column(
                                                   children: [
+                                                    if (UserSession.instance
+                                                        .isLoggedIn) ...[
+                                                      IconButton(
+                                                        onPressed: () =>
+                                                            _startTimer(issue),
+                                                        icon: const Icon(
+                                                            Icons.play_arrow,
+                                                            size: 20),
+                                                        tooltip: 'Start timer',
+                                                        style: IconButton
+                                                            .styleFrom(
+                                                          backgroundColor:
+                                                              Colors.orange[50],
+                                                          foregroundColor:
+                                                              Colors
+                                                                  .orange[700],
+                                                        ),
+                                                      ),
+                                                      const SizedBox(height: 4),
+                                                    ],
                                                     IconButton(
                                                       onPressed: () =>
                                                           _showDescriptionDialog(

@@ -19,8 +19,18 @@ try {
     
     switch ($_SERVER['REQUEST_METHOD']) {
         case 'GET':
-            // Get all projects (not deleted)
-            $stmt = $pdo->prepare("SELECT id, name, description, status, created_at, updated_at FROM projects WHERE deleted = 0 ORDER BY created_at DESC");
+            // Get all projects (not deleted) with time statistics
+            $stmt = $pdo->prepare("
+                SELECT 
+                    p.id, p.name, p.description, p.status, p.created_at, p.updated_at,
+                    COALESCE(SUM(CASE WHEN tt.stop_time IS NOT NULL THEN tt.stop_time - tt.start_time ELSE 0 END), 0) as total_time_seconds
+                FROM projects p
+                LEFT JOIN issues i ON p.id = i.project_id AND i.deleted = 0
+                LEFT JOIN time_tracking tt ON i.id = tt.issue_id
+                WHERE p.deleted = 0
+                GROUP BY p.id, p.name, p.description, p.status, p.created_at, p.updated_at
+                ORDER BY p.created_at DESC
+            ");
             $stmt->execute();
             $projects = $stmt->fetchAll(PDO::FETCH_ASSOC);
             

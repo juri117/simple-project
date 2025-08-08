@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'projects_page.dart';
 import 'all_issues_page.dart';
 import 'config.dart';
+import 'timer_widget.dart';
 
 class MainLayout extends StatefulWidget {
   final int initialIndex;
@@ -113,7 +114,31 @@ class _MainLayoutState extends State<MainLayout> {
           // Sidebar for desktop
           if (MediaQuery.of(context).size.width >= 768) _buildSidebar(),
           // Main content
-          Expanded(child: _pages[_selectedIndex]),
+          Expanded(
+            child: Column(
+              children: [
+                // Timer widget in header
+                if (UserSession.instance.isLoggedIn)
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[50],
+                      border:
+                          Border(bottom: BorderSide(color: Colors.grey[300]!)),
+                    ),
+                    child: Row(
+                      children: [
+                        const TimerWidget(),
+                        const Spacer(),
+                      ],
+                    ),
+                  ),
+                // Main content
+                Expanded(child: _pages[_selectedIndex]),
+              ],
+            ),
+          ),
         ],
       ),
     );

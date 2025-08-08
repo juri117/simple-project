@@ -53,6 +53,20 @@ try {
     
     $pdo->exec($sql);
     
+    // Create time_tracking table
+    $sql = "CREATE TABLE IF NOT EXISTS time_tracking (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        issue_id INTEGER NOT NULL,
+        start_time INTEGER NOT NULL,
+        stop_time INTEGER,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users (id),
+        FOREIGN KEY (issue_id) REFERENCES issues (id)
+    )";
+    
+    $pdo->exec($sql);
+    
     // Insert sample user (password: admin123)
     $username = 'admin';
     $password = password_hash('admin123', PASSWORD_DEFAULT);
@@ -169,6 +183,7 @@ try {
     echo "- Software\n";
     echo "- BAU\n";
     echo "\nSample issues created for both projects!\n";
+    echo "\nTime tracking table created!\n";
     
 } catch (PDOException $e) {
     echo "Database initialization failed: " . $e->getMessage() . "\n";

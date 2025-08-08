@@ -1,0 +1,151 @@
+import 'package:flutter/material.dart';
+import 'time_tracking_service.dart';
+import 'config.dart';
+
+class TimerWidget extends StatefulWidget {
+  const TimerWidget({super.key});
+
+  @override
+  State<TimerWidget> createState() => _TimerWidgetState();
+}
+
+class _TimerWidgetState extends State<TimerWidget> {
+  Map<String, dynamic> _timerState = {
+    'isActive': false,
+    'elapsedSeconds': 0,
+    'issueTitle': null,
+    'projectName': null,
+    'issueId': null,
+  };
+
+  @override
+  void initState() {
+    super.initState();
+    _loadActiveTimer();
+    _subscribeToTimerUpdates();
+  }
+
+  void _loadActiveTimer() async {
+    if (UserSession.instance.isLoggedIn &&
+        UserSession.instance.userId != null) {
+      await TimeTrackingService.instance
+          .getActiveTimer(UserSession.instance.userId!);
+    }
+  }
+
+  void _subscribeToTimerUpdates() {
+    TimeTrackingService.instance.timerStream.listen((state) {
+      if (mounted) {
+        setState(() {
+          _timerState = state;
+        });
+      }
+    });
+  }
+
+  Future<void> _stopTimer() async {
+    if (UserSession.instance.isLoggedIn &&
+        UserSession.instance.userId != null) {
+      final success = await TimeTrackingService.instance
+          .stopTimer(UserSession.instance.userId!);
+      if (success && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Timer stopped'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_timerState['isActive']) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.orange.withOpacity(0.1),
+        border: Border.all(color: Colors.orange.withOpacity(0.3)),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Timer icon
+          Icon(
+            Icons.timer,
+            size: 16,
+            color: Colors.orange[700],
+          ),
+          const SizedBox(width: 8),
+
+          // Issue info
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                _timerState['issueTitle'] ?? 'Unknown Issue',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.orange[700],
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              if (_timerState['projectName'] != null)
+                Text(
+                  _timerState['projectName'],
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: Colors.orange[600],
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+            ],
+          ),
+          const SizedBox(width: 8),
+
+          // Timer display
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.orange[700],
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Text(
+              TimeTrackingService.instance
+                  .formatDuration(_timerState['elapsedSeconds']),
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                fontFamily: 'monospace',
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+
+          // Stop button
+          IconButton(
+            onPressed: _stopTimer,
+            icon: const Icon(Icons.stop, size: 16),
+            color: Colors.red[700],
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(
+              minWidth: 24,
+              minHeight: 24,
+            ),
+            tooltip: 'Stop timer',
+          ),
+        ],
+      ),
+    );
+  }
+}
