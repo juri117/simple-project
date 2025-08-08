@@ -271,6 +271,14 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
     // Reload data if filters changed
     if (filtersChanged) {
       _loadData();
+    } else {
+      // Set default status filter if no status filters are selected
+      if (_selectedStatuses.isEmpty) {
+        final allStatuses = _getUniqueStatuses();
+        _selectedStatuses =
+            allStatuses.where((status) => status != 'closed').toSet();
+        setState(() {}); // Trigger rebuild to show the default filter
+      }
     }
   }
 
@@ -414,6 +422,14 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
         if (hasError) {
           _isError = true;
           _errorMessage = errorMsg;
+        } else {
+          // Set default status filter to exclude 'closed' status
+          // Only set default if no status filters are already selected
+          if (_selectedStatuses.isEmpty) {
+            final allStatuses = _getUniqueStatuses();
+            _selectedStatuses =
+                allStatuses.where((status) => status != 'closed').toSet();
+          }
         }
       });
     }
