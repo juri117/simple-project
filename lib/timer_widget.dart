@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'time_tracking_service.dart';
 import 'config.dart';
+import 'manual_stop_dialog.dart';
 
 class TimerWidget extends StatefulWidget {
   const TimerWidget({super.key});
@@ -55,6 +56,24 @@ class _TimerWidgetState extends State<TimerWidget> {
             backgroundColor: Colors.green,
           ),
         );
+      }
+    }
+  }
+
+  Future<void> _showManualStopDialog() async {
+    if (_timerState['issueTitle'] != null &&
+        _timerState['projectName'] != null) {
+      final result = await showDialog<bool>(
+        context: context,
+        builder: (context) => ManualStopDialog(
+          issueTitle: _timerState['issueTitle'],
+          projectName: _timerState['projectName'],
+        ),
+      );
+
+      if (result == true && mounted) {
+        // Timer was stopped manually, no need to show additional message
+        // as the dialog already shows a success message
       }
     }
   }
@@ -132,17 +151,53 @@ class _TimerWidgetState extends State<TimerWidget> {
           ),
           const SizedBox(width: 8),
 
-          // Stop button
-          IconButton(
-            onPressed: _stopTimer,
-            icon: const Icon(Icons.stop, size: 16),
-            color: Colors.red[700],
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(
-              minWidth: 24,
-              minHeight: 24,
+          // Stop button with menu
+          PopupMenuButton<String>(
+            onSelected: (value) {
+              switch (value) {
+                case 'stop':
+                  _stopTimer();
+                  break;
+                case 'stop_manual':
+                  _showManualStopDialog();
+                  break;
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'stop',
+                child: Row(
+                  children: [
+                    Icon(Icons.stop, size: 16),
+                    SizedBox(width: 8),
+                    Text('Stop Now'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'stop_manual',
+                child: Row(
+                  children: [
+                    Icon(Icons.schedule, size: 16),
+                    SizedBox(width: 8),
+                    Text('Set Manual Time'),
+                  ],
+                ),
+              ),
+            ],
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: Colors.red[700],
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: const Icon(
+                Icons.stop,
+                size: 16,
+                color: Colors.white,
+              ),
             ),
-            tooltip: 'Stop timer',
+            tooltip: 'Stop timer options',
           ),
         ],
       ),

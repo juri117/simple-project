@@ -29,6 +29,8 @@ switch ($method) {
             startTimer($pdo, $input);
         } elseif (isset($input['action']) && $input['action'] === 'stop') {
             stopTimer($pdo, $input);
+        } elseif (isset($input['action']) && $input['action'] === 'stop_manual') {
+            stopTimerManual($pdo, $input);
         } else {
             http_response_code(400);
             echo json_encode(['success' => false, 'error' => 'Invalid action']);
@@ -120,6 +122,74 @@ function stopTimer($pdo, $input) {
     } catch (PDOException $e) {
         http_response_code(500);
         echo json_encode(['success' => false, 'error' => 'Failed to stop timer: ' . $e->getMessage()]);
+    }
+}
+
+function stopTimerManual($pdo, $input) {
+    if (!isset($input['user_id']) || !isset($input['hours']) || !isset($input['minutes'])) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'error' => 'user_id, hours, and minutes are required']);
+        return;
+    }
+    
+    $userId = (int)$input['user_id'];
+    $hours = (int)$input['hours'];
+    $minutes = (int)$input['minutes'];
+    
+    // Validate input
+    if ($hours < 0 || $hours > 24 || $minutes < 0 || $minutes > 59) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'error' => 'Invalid hours or minutes. Hours: 0-24, Minutes: 0-59']);
+        return;
+    }
+    
+    try {
+        // Get the active timer
+        $stmt = $pdo->prepare("
+            SELECT id, start_time 
+            FROM time_tracking 
+            WHERE user_id = ? AND stop_time IS NULL 
+            ORDER BY start_time DESC 
+            LIMIT 1
+        ");
+        $stmt->execute([$userId]);
+        $timer = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if (!$timer) {
+            echo json_encode([
+                'success' => false,
+                'error' => 'No active timer found for this user'
+            ]);
+            return;
+        }
+        
+        // Calculate stop time based on start time + hours + minutes
+        $startTime = (int)$timer['start_time'];
+        $durationSeconds = ($hours * 3600) + ($minutes * 60);
+        $stopTime = $startTime + $durationSeconds;
+        
+        // Update the timer with the calculated stop time
+        $stmt = $pdo->prepare("UPDATE time_tracking SET stop_time = ? WHERE id = ?");
+        $result = $stmt->execute([$stopTime, $timer['id']]);
+        
+        if ($stmt->rowCount() > 0) {
+            echo json_encode([
+                'success' => true,
+                'message' => 'Timer stopped manually successfully',
+                'stop_time' => $stopTime,
+                'duration_hours' => $hours,
+                'duration_minutes' => $minutes,
+                'duration_seconds' => $durationSeconds
+            ]);
+        } else {
+            echo json_encode([
+                'success' => false,
+                'error' => 'Failed to update timer'
+            ]);
+        }
+    } catch (PDOException $e) {
+        http_response_code(500);
+        echo json_encode(['success' => false, 'error' => 'Failed to stop timer manually: ' . $e->getMessage()]);
     }
 }
 

@@ -96,6 +96,36 @@ class TimeTrackingService {
     }
   }
 
+  // Stop timer manually with custom duration
+  Future<bool> stopTimerManual(int userId, int hours, int minutes) async {
+    try {
+      final response = await http.post(
+        Uri.parse(Config.instance.buildApiUrl('time_tracking.php')),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'action': 'stop_manual',
+          'user_id': userId,
+          'hours': hours,
+          'minutes': minutes,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['success'] == true) {
+          _stopTimer();
+          _clearActiveTimer();
+          _notifyListeners();
+          return true;
+        }
+      }
+      return false;
+    } catch (e) {
+      print('Error stopping timer manually: $e');
+      return false;
+    }
+  }
+
   // Get active timer from server
   Future<Map<String, dynamic>?> getActiveTimer(int userId) async {
     try {
