@@ -263,36 +263,6 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                       const SizedBox(height: 16),
-
-                      // Demo Credentials
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFf7fafc),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: const Color(0xFFe2e8f0)),
-                        ),
-                        child: const Column(
-                          children: [
-                            Text(
-                              'Demo Credentials:',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF4a5568),
-                              ),
-                            ),
-                            SizedBox(height: 4),
-                            Text(
-                              'Username: admin\nPassword: admin123',
-                              style: TextStyle(
-                                color: Color(0xFF718096),
-                                fontSize: 12,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
-                        ),
-                      ),
                     ],
                   ),
                 ),

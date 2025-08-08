@@ -38,8 +38,10 @@ class _MainLayoutState extends State<MainLayout> {
       _selectedProjectId = projectId;
       _selectedIndex = 1; // Switch to All Issues page
     });
-    // Update URL when navigating to issues
-    context.go('/issues');
+    // Update URL when navigating to issues with project filter
+    final uri = Uri(
+        path: '/issues', queryParameters: {'projects': projectId.toString()});
+    context.go(uri.toString());
   }
 
   void _navigateToPage(int index) {

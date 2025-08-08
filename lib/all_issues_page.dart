@@ -243,53 +243,58 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
       final routerState = GoRouterState.of(context);
       final uri = Uri.parse(routerState.uri.toString());
 
-      // Parse project filters
-      if (uri.queryParameters['projects'] != null) {
-        final projectIds = uri.queryParameters['projects']!.split(',');
-        _selectedProjects = projectIds
-            .where((id) => id.isNotEmpty)
-            .map((id) => int.tryParse(id))
-            .where((id) => id != null)
-            .map((id) => id!)
-            .toSet();
-      }
+      // Only parse URL filters if there are query parameters
+      // This prevents overwriting the initial project selection when navigating from projects
+      if (uri.queryParameters.isNotEmpty) {
+        // Parse project filters
+        if (uri.queryParameters['projects'] != null) {
+          final projectIds = uri.queryParameters['projects']!.split(',');
+          _selectedProjects = projectIds
+              .where((id) => id.isNotEmpty)
+              .map((id) => int.tryParse(id))
+              .where((id) => id != null)
+              .map((id) => id!)
+              .toSet();
+        }
 
-      // Parse assignee filters
-      if (uri.queryParameters['assignees'] != null) {
-        final assigneeIds = uri.queryParameters['assignees']!.split(',');
-        _selectedAssignees = assigneeIds
-            .where((id) => id.isNotEmpty)
-            .map((id) => int.tryParse(id))
-            .where((id) => id != null)
-            .map((id) => id!)
-            .toSet();
-      }
+        // Parse assignee filters
+        if (uri.queryParameters['assignees'] != null) {
+          final assigneeIds = uri.queryParameters['assignees']!.split(',');
+          _selectedAssignees = assigneeIds
+              .where((id) => id.isNotEmpty)
+              .map((id) => int.tryParse(id))
+              .where((id) => id != null)
+              .map((id) => id!)
+              .toSet();
+        }
 
-      // Parse creator filters
-      if (uri.queryParameters['creators'] != null) {
-        final creatorIds = uri.queryParameters['creators']!.split(',');
-        _selectedCreators = creatorIds
-            .where((id) => id.isNotEmpty)
-            .map((id) => int.tryParse(id))
-            .where((id) => id != null)
-            .map((id) => id!)
-            .toSet();
-      }
+        // Parse creator filters
+        if (uri.queryParameters['creators'] != null) {
+          final creatorIds = uri.queryParameters['creators']!.split(',');
+          _selectedCreators = creatorIds
+              .where((id) => id.isNotEmpty)
+              .map((id) => int.tryParse(id))
+              .where((id) => id != null)
+              .map((id) => id!)
+              .toSet();
+        }
 
-      // Parse status filters
-      if (uri.queryParameters['statuses'] != null) {
-        _selectedStatuses = uri.queryParameters['statuses']!.split(',').toSet();
-      }
+        // Parse status filters
+        if (uri.queryParameters['statuses'] != null) {
+          _selectedStatuses =
+              uri.queryParameters['statuses']!.split(',').toSet();
+        }
 
-      // Parse priority filters
-      if (uri.queryParameters['priorities'] != null) {
-        _selectedPriorities =
-            uri.queryParameters['priorities']!.split(',').toSet();
-      }
+        // Parse priority filters
+        if (uri.queryParameters['priorities'] != null) {
+          _selectedPriorities =
+              uri.queryParameters['priorities']!.split(',').toSet();
+        }
 
-      // Parse tag filters
-      if (uri.queryParameters['tags'] != null) {
-        _selectedTags = uri.queryParameters['tags']!.split(',').toSet();
+        // Parse tag filters
+        if (uri.queryParameters['tags'] != null) {
+          _selectedTags = uri.queryParameters['tags']!.split(',').toSet();
+        }
       }
     } catch (e) {
       // If router state is not available, skip URL parsing
