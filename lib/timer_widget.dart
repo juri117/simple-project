@@ -87,8 +87,8 @@ class _TimerWidgetState extends State<TimerWidget> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.orange.withOpacity(0.1),
-        border: Border.all(color: Colors.orange.withOpacity(0.3)),
+        color: Colors.orange.withValues(alpha: 0.1),
+        border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
@@ -185,6 +185,7 @@ class _TimerWidgetState extends State<TimerWidget> {
                 ),
               ),
             ],
+            tooltip: 'Stop timer options',
             child: Container(
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
@@ -197,7 +198,6 @@ class _TimerWidgetState extends State<TimerWidget> {
                 color: Colors.white,
               ),
             ),
-            tooltip: 'Stop timer options',
           ),
         ],
       ),
