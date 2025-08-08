@@ -2,8 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'login_screen.dart';
 import 'main_layout.dart';
+import 'config.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Load configuration
+  await Config.instance.load();
+
   runApp(const MyApp());
 }
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'config.dart';
 
 class Project {
   final int id;
@@ -53,47 +54,57 @@ class _ProjectsPageState extends State<ProjectsPage> {
   }
 
   Future<void> _loadProjects() async {
-    setState(() {
-      _isLoading = true;
-      _isError = false;
-    });
+    if (mounted) {
+      setState(() {
+        _isLoading = true;
+        _isError = false;
+      });
+    }
 
     try {
       final response = await http.get(
-        Uri.parse('http://localhost:8000/projects.php'),
+        Uri.parse(Config.instance.buildApiUrl('projects.php')),
         headers: {'Content-Type': 'application/json'},
       );
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         if (data['success'] == true) {
-          setState(() {
-            _projects = (data['projects'] as List)
-                .map((project) => Project.fromJson(project))
-                .toList();
-            _isLoading = false;
-          });
+          if (mounted) {
+            setState(() {
+              _projects = (data['projects'] as List)
+                  .map((project) => Project.fromJson(project))
+                  .toList();
+              _isLoading = false;
+            });
+          }
         } else {
+          if (mounted) {
+            setState(() {
+              _isError = true;
+              _errorMessage = data['error'] ?? 'Failed to load projects';
+              _isLoading = false;
+            });
+          }
+        }
+      } else {
+        if (mounted) {
           setState(() {
             _isError = true;
-            _errorMessage = data['error'] ?? 'Failed to load projects';
+            _errorMessage =
+                'HTTP ${response.statusCode}: ${response.reasonPhrase}';
             _isLoading = false;
           });
         }
-      } else {
+      }
+    } catch (e) {
+      if (mounted) {
         setState(() {
           _isError = true;
-          _errorMessage =
-              'HTTP ${response.statusCode}: ${response.reasonPhrase}';
+          _errorMessage = 'Connection error: $e';
           _isLoading = false;
         });
       }
-    } catch (e) {
-      setState(() {
-        _isError = true;
-        _errorMessage = 'Connection error: $e';
-        _isLoading = false;
-      });
     }
   }
 
@@ -106,7 +117,7 @@ class _ProjectsPageState extends State<ProjectsPage> {
     if (result != null) {
       try {
         final response = await http.post(
-          Uri.parse('http://localhost:8000/projects.php'),
+          Uri.parse(Config.instance.buildApiUrl('projects.php')),
           headers: {'Content-Type': 'application/json'},
           body: json.encode(result),
         );
@@ -153,7 +164,7 @@ class _ProjectsPageState extends State<ProjectsPage> {
     if (result != null) {
       try {
         final response = await http.put(
-          Uri.parse('http://localhost:8000/projects.php'),
+          Uri.parse(Config.instance.buildApiUrl('projects.php')),
           headers: {'Content-Type': 'application/json'},
           body: json.encode(result),
         );
@@ -214,7 +225,7 @@ class _ProjectsPageState extends State<ProjectsPage> {
     if (confirmed == true) {
       try {
         final response = await http.delete(
-          Uri.parse('http://localhost:8000/projects.php'),
+          Uri.parse(Config.instance.buildApiUrl('projects.php')),
           headers: {'Content-Type': 'application/json'},
           body: json.encode({'id': project.id}),
         );
@@ -274,170 +285,177 @@ class _ProjectsPageState extends State<ProjectsPage> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _isError
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.error_outline, size: 64, color: Colors.red),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Error loading projects',
-                    style: Theme.of(context).textTheme.headlineSmall,
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.error_outline,
+                          size: 64, color: Colors.red),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Error loading projects',
+                        style: Theme.of(context).textTheme.headlineSmall,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        _errorMessage,
+                        style: Theme.of(context).textTheme.bodyMedium,
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: _loadProjects,
+                        child: const Text('Retry'),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    _errorMessage,
-                    style: Theme.of(context).textTheme.bodyMedium,
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: _loadProjects,
-                    child: const Text('Retry'),
-                  ),
-                ],
-              ),
-            )
-          : _projects.isEmpty
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.folder_open, size: 64, color: Colors.grey),
-                  const SizedBox(height: 16),
-                  Text(
-                    'No projects yet',
-                    style: Theme.of(context).textTheme.headlineSmall,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Create your first project to get started',
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                ],
-              ),
-            )
-          : RefreshIndicator(
-              onRefresh: _loadProjects,
-              child: ListView.builder(
-                padding: const EdgeInsets.all(16),
-                itemCount: _projects.length,
-                itemBuilder: (context, index) {
-                  final project = _projects[index];
-                  return Card(
-                    margin: const EdgeInsets.only(bottom: 16),
-                    child: InkWell(
-                      onTap: () {
-                        if (widget.onProjectTap != null) {
-                          widget.onProjectTap!(project.id);
-                        }
-                      },
-                      child: ListTile(
-                        contentPadding: const EdgeInsets.all(16),
-                        title: Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                project.name,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 18,
+                )
+              : _projects.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.folder_open,
+                              size: 64, color: Colors.grey),
+                          const SizedBox(height: 16),
+                          Text(
+                            'No projects yet',
+                            style: Theme.of(context).textTheme.headlineSmall,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Create your first project to get started',
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                        ],
+                      ),
+                    )
+                  : RefreshIndicator(
+                      onRefresh: _loadProjects,
+                      child: ListView.builder(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: _projects.length,
+                        itemBuilder: (context, index) {
+                          final project = _projects[index];
+                          return Card(
+                            margin: const EdgeInsets.only(bottom: 16),
+                            child: InkWell(
+                              onTap: () {
+                                if (widget.onProjectTap != null) {
+                                  widget.onProjectTap!(project.id);
+                                }
+                              },
+                              child: ListTile(
+                                contentPadding: const EdgeInsets.all(16),
+                                title: Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        project.name,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 18,
+                                        ),
+                                      ),
+                                    ),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 4,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: project.status == 'active'
+                                            ? Colors.green
+                                            : Colors.orange,
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Text(
+                                        project.status.toUpperCase(),
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                subtitle: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    if (project.description.isNotEmpty) ...[
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        project.description,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyMedium,
+                                      ),
+                                    ],
+                                    const SizedBox(height: 8),
+                                    Row(
+                                      children: [
+                                        Text(
+                                          'Created: ${project.createdAt}',
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodySmall
+                                              ?.copyWith(
+                                                  color: Colors.grey[600]),
+                                        ),
+                                        const Spacer(),
+                                        Icon(
+                                          Icons.arrow_forward_ios,
+                                          size: 16,
+                                          color: Colors.grey[600],
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                                trailing: PopupMenuButton<String>(
+                                  onSelected: (value) {
+                                    switch (value) {
+                                      case 'edit':
+                                        _editProject(project);
+                                        break;
+                                      case 'delete':
+                                        _deleteProject(project);
+                                        break;
+                                    }
+                                  },
+                                  itemBuilder: (context) => [
+                                    const PopupMenuItem(
+                                      value: 'edit',
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.edit),
+                                          SizedBox(width: 8),
+                                          Text('Edit'),
+                                        ],
+                                      ),
+                                    ),
+                                    const PopupMenuItem(
+                                      value: 'delete',
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.delete, color: Colors.red),
+                                          SizedBox(width: 8),
+                                          Text(
+                                            'Delete',
+                                            style: TextStyle(color: Colors.red),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: project.status == 'active'
-                                    ? Colors.green
-                                    : Colors.orange,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Text(
-                                project.status.toUpperCase(),
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            if (project.description.isNotEmpty) ...[
-                              const SizedBox(height: 8),
-                              Text(
-                                project.description,
-                                style: Theme.of(context).textTheme.bodyMedium,
-                              ),
-                            ],
-                            const SizedBox(height: 8),
-                            Row(
-                              children: [
-                                Text(
-                                  'Created: ${project.createdAt}',
-                                  style: Theme.of(context).textTheme.bodySmall
-                                      ?.copyWith(color: Colors.grey[600]),
-                                ),
-                                const Spacer(),
-                                Icon(
-                                  Icons.arrow_forward_ios,
-                                  size: 16,
-                                  color: Colors.grey[600],
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                        trailing: PopupMenuButton<String>(
-                          onSelected: (value) {
-                            switch (value) {
-                              case 'edit':
-                                _editProject(project);
-                                break;
-                              case 'delete':
-                                _deleteProject(project);
-                                break;
-                            }
-                          },
-                          itemBuilder: (context) => [
-                            const PopupMenuItem(
-                              value: 'edit',
-                              child: Row(
-                                children: [
-                                  Icon(Icons.edit),
-                                  SizedBox(width: 8),
-                                  Text('Edit'),
-                                ],
-                              ),
-                            ),
-                            const PopupMenuItem(
-                              value: 'delete',
-                              child: Row(
-                                children: [
-                                  Icon(Icons.delete, color: Colors.red),
-                                  SizedBox(width: 8),
-                                  Text(
-                                    'Delete',
-                                    style: TextStyle(color: Colors.red),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
+                          );
+                        },
                       ),
                     ),
-                  );
-                },
-              ),
-            ),
       floatingActionButton: FloatingActionButton(
         onPressed: _createProject,
         backgroundColor: const Color(0xFF667eea),

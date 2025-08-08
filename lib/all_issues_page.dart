@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:go_router/go_router.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'dart:convert';
+import 'config.dart';
 
 class FilterOption<T> {
   final T value;
@@ -237,84 +238,97 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
   }
 
   void _parseUrlFilters() {
-    final uri = Uri.parse(GoRouterState.of(context).uri.toString());
+    try {
+      // Try to get router state, but handle the case where it's not available
+      final routerState = GoRouterState.of(context);
+      final uri = Uri.parse(routerState.uri.toString());
 
-    // Parse project filters
-    if (uri.queryParameters['projects'] != null) {
-      final projectIds = uri.queryParameters['projects']!.split(',');
-      _selectedProjects = projectIds
-          .where((id) => id.isNotEmpty)
-          .map((id) => int.tryParse(id))
-          .where((id) => id != null)
-          .map((id) => id!)
-          .toSet();
-    }
+      // Parse project filters
+      if (uri.queryParameters['projects'] != null) {
+        final projectIds = uri.queryParameters['projects']!.split(',');
+        _selectedProjects = projectIds
+            .where((id) => id.isNotEmpty)
+            .map((id) => int.tryParse(id))
+            .where((id) => id != null)
+            .map((id) => id!)
+            .toSet();
+      }
 
-    // Parse assignee filters
-    if (uri.queryParameters['assignees'] != null) {
-      final assigneeIds = uri.queryParameters['assignees']!.split(',');
-      _selectedAssignees = assigneeIds
-          .where((id) => id.isNotEmpty)
-          .map((id) => int.tryParse(id))
-          .where((id) => id != null)
-          .map((id) => id!)
-          .toSet();
-    }
+      // Parse assignee filters
+      if (uri.queryParameters['assignees'] != null) {
+        final assigneeIds = uri.queryParameters['assignees']!.split(',');
+        _selectedAssignees = assigneeIds
+            .where((id) => id.isNotEmpty)
+            .map((id) => int.tryParse(id))
+            .where((id) => id != null)
+            .map((id) => id!)
+            .toSet();
+      }
 
-    // Parse creator filters
-    if (uri.queryParameters['creators'] != null) {
-      final creatorIds = uri.queryParameters['creators']!.split(',');
-      _selectedCreators = creatorIds
-          .where((id) => id.isNotEmpty)
-          .map((id) => int.tryParse(id))
-          .where((id) => id != null)
-          .map((id) => id!)
-          .toSet();
-    }
+      // Parse creator filters
+      if (uri.queryParameters['creators'] != null) {
+        final creatorIds = uri.queryParameters['creators']!.split(',');
+        _selectedCreators = creatorIds
+            .where((id) => id.isNotEmpty)
+            .map((id) => int.tryParse(id))
+            .where((id) => id != null)
+            .map((id) => id!)
+            .toSet();
+      }
 
-    // Parse status filters
-    if (uri.queryParameters['statuses'] != null) {
-      _selectedStatuses = uri.queryParameters['statuses']!.split(',').toSet();
-    }
+      // Parse status filters
+      if (uri.queryParameters['statuses'] != null) {
+        _selectedStatuses = uri.queryParameters['statuses']!.split(',').toSet();
+      }
 
-    // Parse priority filters
-    if (uri.queryParameters['priorities'] != null) {
-      _selectedPriorities =
-          uri.queryParameters['priorities']!.split(',').toSet();
-    }
+      // Parse priority filters
+      if (uri.queryParameters['priorities'] != null) {
+        _selectedPriorities =
+            uri.queryParameters['priorities']!.split(',').toSet();
+      }
 
-    // Parse tag filters
-    if (uri.queryParameters['tags'] != null) {
-      _selectedTags = uri.queryParameters['tags']!.split(',').toSet();
+      // Parse tag filters
+      if (uri.queryParameters['tags'] != null) {
+        _selectedTags = uri.queryParameters['tags']!.split(',').toSet();
+      }
+    } catch (e) {
+      // If router state is not available, skip URL parsing
+      // This can happen when the widget is created as a child of another route
+      print('Warning: Could not parse URL filters: $e');
     }
   }
 
   void _updateUrlFilters() {
-    final Map<String, String> queryParams = {};
+    try {
+      final Map<String, String> queryParams = {};
 
-    if (_selectedProjects.isNotEmpty) {
-      queryParams['projects'] = _selectedProjects.join(',');
-    }
-    if (_selectedAssignees.isNotEmpty) {
-      queryParams['assignees'] = _selectedAssignees.join(',');
-    }
-    if (_selectedCreators.isNotEmpty) {
-      queryParams['creators'] = _selectedCreators.join(',');
-    }
-    if (_selectedStatuses.isNotEmpty) {
-      queryParams['statuses'] = _selectedStatuses.join(',');
-    }
-    if (_selectedPriorities.isNotEmpty) {
-      queryParams['priorities'] = _selectedPriorities.join(',');
-    }
-    if (_selectedTags.isNotEmpty) {
-      queryParams['tags'] = _selectedTags.join(',');
-    }
+      if (_selectedProjects.isNotEmpty) {
+        queryParams['projects'] = _selectedProjects.join(',');
+      }
+      if (_selectedAssignees.isNotEmpty) {
+        queryParams['assignees'] = _selectedAssignees.join(',');
+      }
+      if (_selectedCreators.isNotEmpty) {
+        queryParams['creators'] = _selectedCreators.join(',');
+      }
+      if (_selectedStatuses.isNotEmpty) {
+        queryParams['statuses'] = _selectedStatuses.join(',');
+      }
+      if (_selectedPriorities.isNotEmpty) {
+        queryParams['priorities'] = _selectedPriorities.join(',');
+      }
+      if (_selectedTags.isNotEmpty) {
+        queryParams['tags'] = _selectedTags.join(',');
+      }
 
-    final uri = Uri(
-        path: '/issues',
-        queryParameters: queryParams.isEmpty ? null : queryParams);
-    context.go(uri.toString());
+      final uri = Uri(
+          path: '/issues',
+          queryParameters: queryParams.isEmpty ? null : queryParams);
+      context.go(uri.toString());
+    } catch (e) {
+      // If router state is not available, skip URL update
+      print('Warning: Could not update URL filters: $e');
+    }
   }
 
   Future<void> _loadData() async {
@@ -350,29 +364,33 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
       errorMsg += '\nFailed to load projects: $e';
     }
 
-    setState(() {
-      _isLoading = false;
-      if (hasError) {
-        _isError = true;
-        _errorMessage = errorMsg;
-      }
-    });
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+        if (hasError) {
+          _isError = true;
+          _errorMessage = errorMsg;
+        }
+      });
+    }
   }
 
   Future<void> _loadAllIssues() async {
     final response = await http.get(
-      Uri.parse('http://localhost:8000/issues.php'),
+      Uri.parse(Config.instance.buildApiUrl('issues.php')),
       headers: {'Content-Type': 'application/json'},
     );
 
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       if (data['success'] == true) {
-        setState(() {
-          _issues = (data['issues'] as List)
-              .map((issue) => Issue.fromJson(issue))
-              .toList();
-        });
+        if (mounted) {
+          setState(() {
+            _issues = (data['issues'] as List)
+                .map((issue) => Issue.fromJson(issue))
+                .toList();
+          });
+        }
       } else {
         throw Exception(data['error'] ?? 'Failed to load issues');
       }
@@ -383,18 +401,20 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
 
   Future<void> _loadUsers() async {
     final response = await http.get(
-      Uri.parse('http://localhost:8000/users.php'),
+      Uri.parse(Config.instance.buildApiUrl('users.php')),
       headers: {'Content-Type': 'application/json'},
     );
 
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       if (data['success'] == true) {
-        setState(() {
-          _users = (data['users'] as List)
-              .map((user) => User.fromJson(user))
-              .toList();
-        });
+        if (mounted) {
+          setState(() {
+            _users = (data['users'] as List)
+                .map((user) => User.fromJson(user))
+                .toList();
+          });
+        }
       } else {
         throw Exception(data['error'] ?? 'Failed to load users');
       }
@@ -405,18 +425,20 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
 
   Future<void> _loadProjects() async {
     final response = await http.get(
-      Uri.parse('http://localhost:8000/projects.php'),
+      Uri.parse(Config.instance.buildApiUrl('projects.php')),
       headers: {'Content-Type': 'application/json'},
     );
 
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       if (data['success'] == true) {
-        setState(() {
-          _projects = (data['projects'] as List)
-              .map((project) => Project.fromJson(project))
-              .toList();
-        });
+        if (mounted) {
+          setState(() {
+            _projects = (data['projects'] as List)
+                .map((project) => Project.fromJson(project))
+                .toList();
+          });
+        }
       } else {
         throw Exception(data['error'] ?? 'Failed to load projects');
       }
@@ -434,7 +456,7 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
     if (result != null) {
       try {
         final response = await http.post(
-          Uri.parse('http://localhost:8000/issues.php'),
+          Uri.parse(Config.instance.buildApiUrl('issues.php')),
           headers: {'Content-Type': 'application/json'},
           body: json.encode(result),
         );
@@ -482,7 +504,7 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
     if (result != null) {
       try {
         final response = await http.put(
-          Uri.parse('http://localhost:8000/issues.php'),
+          Uri.parse(Config.instance.buildApiUrl('issues.php')),
           headers: {'Content-Type': 'application/json'},
           body: json.encode(result),
         );
@@ -543,7 +565,7 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
     if (confirmed == true) {
       try {
         final response = await http.delete(
-          Uri.parse('http://localhost:8000/issues.php'),
+          Uri.parse(Config.instance.buildApiUrl('issues.php')),
           headers: {'Content-Type': 'application/json'},
           body: json.encode({'id': issue.id}),
         );
@@ -1018,8 +1040,10 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
         ? title
         : selectedCount == 1
             ? options
-                .firstWhere((opt) => selectedValues.contains(opt.value))
-                .label
+                    .where((opt) => selectedValues.contains(opt.value))
+                    .firstOrNull
+                    ?.label ??
+                title
             : '$title ($selectedCount)';
 
     return PopupMenuButton<T>(

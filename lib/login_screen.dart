@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:go_router/go_router.dart';
 import 'dart:convert';
+import 'config.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -28,10 +29,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       final response = await http.post(
-        Uri.parse('http://localhost:8000/login.php'),
+        Uri.parse(Config.instance.buildApiUrl('login.php')),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
-          'username': _usernameController.text.trim(),
+          'username': _usernameController.text,
           'password': _passwordController.text,
         }),
       );

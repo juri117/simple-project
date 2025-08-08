@@ -23,6 +23,15 @@
             "url": "http://localhost:8080",
             "webRoot": "${workspaceFolder}",
             "runtimeExecutable": "/opt/brave.com/brave/brave-browser"
+        },
+        {
+            "name": "app (linux)",
+            "request": "launch",
+            "type": "dart",
+            "args": [
+                "-d",
+                "linux"
+            ]
         }
     ]
 }
