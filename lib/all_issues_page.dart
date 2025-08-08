@@ -1730,75 +1730,112 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
                                                 const SizedBox(width: 12),
                                                 // Right side action buttons
                                                 Column(
+                                                  mainAxisSize:
+                                                      MainAxisSize.min,
                                                   children: [
-                                                    if (UserSession.instance
-                                                        .isLoggedIn) ...[
-                                                      IconButton(
-                                                        onPressed: () =>
-                                                            _startTimer(issue),
-                                                        icon: const Icon(
-                                                            Icons.play_arrow,
-                                                            size: 20),
-                                                        tooltip: 'Start timer',
-                                                        style: IconButton
-                                                            .styleFrom(
-                                                          backgroundColor:
-                                                              Colors.orange[50],
-                                                          foregroundColor:
-                                                              Colors
-                                                                  .orange[700],
+                                                    // First row: info, start
+                                                    Row(
+                                                      mainAxisSize:
+                                                          MainAxisSize.min,
+                                                      children: [
+                                                        IconButton(
+                                                          onPressed: () =>
+                                                              _showDescriptionDialog(
+                                                                  issue),
+                                                          icon: const Icon(
+                                                              Icons.info,
+                                                              size: 20),
+                                                          tooltip:
+                                                              'View description',
+                                                          style: IconButton
+                                                              .styleFrom(
+                                                            backgroundColor:
+                                                                const Color(
+                                                                        0xFF667eea)
+                                                                    .withValues(
+                                                                        alpha:
+                                                                            0.1),
+                                                            foregroundColor:
+                                                                const Color(
+                                                                    0xFF667eea),
+                                                          ),
                                                         ),
-                                                      ),
-                                                      const SizedBox(height: 4),
-                                                    ],
-                                                    IconButton(
-                                                      onPressed: () =>
-                                                          _showDescriptionDialog(
-                                                              issue),
-                                                      icon: const Icon(
-                                                          Icons.info,
-                                                          size: 20),
-                                                      tooltip:
-                                                          'View description',
-                                                      style:
-                                                          IconButton.styleFrom(
-                                                        backgroundColor:
-                                                            Colors.green[50],
-                                                        foregroundColor:
-                                                            Colors.green[700],
-                                                      ),
+                                                        if (UserSession.instance
+                                                            .isLoggedIn) ...[
+                                                          const SizedBox(
+                                                              width: 4),
+                                                          IconButton(
+                                                            onPressed: () =>
+                                                                _startTimer(
+                                                                    issue),
+                                                            icon: const Icon(
+                                                                Icons
+                                                                    .play_arrow,
+                                                                size: 20),
+                                                            tooltip:
+                                                                'Start timer',
+                                                            style: IconButton
+                                                                .styleFrom(
+                                                              backgroundColor:
+                                                                  const Color(
+                                                                          0xFF667eea)
+                                                                      .withValues(
+                                                                          alpha:
+                                                                              0.1),
+                                                              foregroundColor:
+                                                                  const Color(
+                                                                      0xFF667eea),
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ],
                                                     ),
                                                     const SizedBox(height: 4),
-                                                    IconButton(
-                                                      onPressed: () =>
-                                                          _editIssue(issue),
-                                                      icon: const Icon(
-                                                          Icons.edit,
-                                                          size: 20),
-                                                      tooltip: 'Edit issue',
-                                                      style:
-                                                          IconButton.styleFrom(
-                                                        backgroundColor:
-                                                            Colors.blue[50],
-                                                        foregroundColor:
-                                                            Colors.blue[700],
-                                                      ),
-                                                    ),
-                                                    const SizedBox(height: 4),
-                                                    IconButton(
-                                                      onPressed: () =>
-                                                          _deleteIssue(issue),
-                                                      icon: const Icon(
-                                                          Icons.delete,
-                                                          size: 20),
-                                                      tooltip: 'Delete issue',
-                                                      style:
-                                                          IconButton.styleFrom(
-                                                        backgroundColor:
-                                                            Colors.red[50],
-                                                        foregroundColor:
-                                                            Colors.red[700],
-                                                      ),
+                                                    // Second row: edit, delete
+                                                    Row(
+                                                      mainAxisSize:
+                                                          MainAxisSize.min,
+                                                      children: [
+                                                        IconButton(
+                                                          onPressed: () =>
+                                                              _editIssue(issue),
+                                                          icon: const Icon(
+                                                              Icons.edit,
+                                                              size: 20),
+                                                          tooltip: 'Edit issue',
+                                                          style: IconButton
+                                                              .styleFrom(
+                                                            backgroundColor:
+                                                                const Color(
+                                                                        0xFF667eea)
+                                                                    .withValues(
+                                                                        alpha:
+                                                                            0.1),
+                                                            foregroundColor:
+                                                                const Color(
+                                                                    0xFF667eea),
+                                                          ),
+                                                        ),
+                                                        const SizedBox(
+                                                            width: 4),
+                                                        IconButton(
+                                                          onPressed: () =>
+                                                              _deleteIssue(
+                                                                  issue),
+                                                          icon: const Icon(
+                                                              Icons.delete,
+                                                              size: 20),
+                                                          tooltip:
+                                                              'Delete issue',
+                                                          style: IconButton
+                                                              .styleFrom(
+                                                            backgroundColor:
+                                                                Colors.red[50],
+                                                            foregroundColor:
+                                                                Colors.red[700],
+                                                          ),
+                                                        ),
+                                                      ],
                                                     ),
                                                   ],
                                                 ),
