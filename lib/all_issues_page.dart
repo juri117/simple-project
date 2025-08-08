@@ -193,8 +193,10 @@ class IssueDescriptionWidget extends StatelessWidget {
 
 class AllIssuesPage extends StatefulWidget {
   final int? initialProjectId;
+  final int? initialAssigneeId;
 
-  const AllIssuesPage({super.key, this.initialProjectId});
+  const AllIssuesPage(
+      {super.key, this.initialProjectId, this.initialAssigneeId});
 
   @override
   State<AllIssuesPage> createState() => _AllIssuesPageState();
@@ -224,6 +226,10 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
     if (widget.initialProjectId != null) {
       _selectedProjects.add(widget.initialProjectId!);
     }
+    // Set initial assignee filter if provided
+    if (widget.initialAssigneeId != null) {
+      _selectedAssignees.add(widget.initialAssigneeId!);
+    }
     _loadData();
   }
 
@@ -237,6 +243,37 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
     }
   }
 
+  @override
+  void didUpdateWidget(AllIssuesPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    // Check if initial filters have changed
+    bool filtersChanged = false;
+
+    // Check project filter changes
+    if (widget.initialProjectId != oldWidget.initialProjectId) {
+      _selectedProjects.clear();
+      if (widget.initialProjectId != null) {
+        _selectedProjects.add(widget.initialProjectId!);
+      }
+      filtersChanged = true;
+    }
+
+    // Check assignee filter changes
+    if (widget.initialAssigneeId != oldWidget.initialAssigneeId) {
+      _selectedAssignees.clear();
+      if (widget.initialAssigneeId != null) {
+        _selectedAssignees.add(widget.initialAssigneeId!);
+      }
+      filtersChanged = true;
+    }
+
+    // Reload data if filters changed
+    if (filtersChanged) {
+      _loadData();
+    }
+  }
+
   void _parseUrlFilters() {
     try {
       // Try to get router state, but handle the case where it's not available
@@ -246,8 +283,9 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
       // Only parse URL filters if there are query parameters
       // This prevents overwriting the initial project selection when navigating from projects
       if (uri.queryParameters.isNotEmpty) {
-        // Parse project filters
-        if (uri.queryParameters['projects'] != null) {
+        // Parse project filters (only if not already set by initialProjectId)
+        if (uri.queryParameters['projects'] != null &&
+            widget.initialProjectId == null) {
           final projectIds = uri.queryParameters['projects']!.split(',');
           _selectedProjects = projectIds
               .where((id) => id.isNotEmpty)
@@ -257,8 +295,9 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
               .toSet();
         }
 
-        // Parse assignee filters
-        if (uri.queryParameters['assignees'] != null) {
+        // Parse assignee filters (only if not already set by initialAssigneeId)
+        if (uri.queryParameters['assignees'] != null &&
+            widget.initialAssigneeId == null) {
           final assigneeIds = uri.queryParameters['assignees']!.split(',');
           _selectedAssignees = assigneeIds
               .where((id) => id.isNotEmpty)

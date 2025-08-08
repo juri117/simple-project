@@ -26,7 +26,18 @@ final GoRouter _router = GoRouter(
     ),
     GoRoute(
       path: '/issues',
-      builder: (context, state) => const MainLayout(initialIndex: 1),
+      builder: (context, state) {
+        // Check if this is a "My Issues" request (has assignee filter for current user)
+        final uri = Uri.parse(state.uri.toString());
+        final assignees = uri.queryParameters['assignees'];
+        final currentUserId = UserSession.instance.userId?.toString();
+
+        if (assignees == currentUserId) {
+          return const MainLayout(initialIndex: 2);
+        } else {
+          return const MainLayout(initialIndex: 1);
+        }
+      },
     ),
     // Redirect root to login
     GoRoute(

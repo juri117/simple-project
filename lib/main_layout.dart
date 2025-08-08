@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'projects_page.dart';
 import 'all_issues_page.dart';
+import 'config.dart';
 
 class MainLayout extends StatefulWidget {
   final int initialIndex;
@@ -23,15 +24,41 @@ class _MainLayoutState extends State<MainLayout> {
     _selectedIndex = widget.initialIndex;
   }
 
-  final List<NavigationItem> _navigationItems = [
-    NavigationItem(icon: Icons.folder, label: 'Projects', index: 0),
-    NavigationItem(icon: Icons.bug_report, label: 'All Issues', index: 1),
-  ];
+  List<NavigationItem> get _navigationItems {
+    final items = [
+      NavigationItem(icon: Icons.folder, label: 'Projects', index: 0),
+      NavigationItem(icon: Icons.bug_report, label: 'All Issues', index: 1),
+    ];
 
-  List<Widget> get _pages => [
-        ProjectsPage(onProjectTap: _navigateToProjectIssues),
-        AllIssuesPage(initialProjectId: _selectedProjectId),
-      ];
+    // Only show "My Issues" if user is logged in
+    if (UserSession.instance.isLoggedIn) {
+      items.add(
+          NavigationItem(icon: Icons.person, label: 'My Issues', index: 2));
+    }
+
+    return items;
+  }
+
+  List<Widget> get _pages {
+    final pages = [
+      ProjectsPage(onProjectTap: _navigateToProjectIssues),
+      AllIssuesPage(
+        key: const ValueKey('all-issues'),
+        initialProjectId: _selectedProjectId,
+      ),
+    ];
+
+    // Add My Issues page if user is logged in
+    if (UserSession.instance.isLoggedIn) {
+      pages.add(AllIssuesPage(
+        key: const ValueKey('my-issues'),
+        initialProjectId: _selectedProjectId,
+        initialAssigneeId: UserSession.instance.userId,
+      ));
+    }
+
+    return pages;
+  }
 
   void _navigateToProjectIssues(int projectId) {
     setState(() {
@@ -51,6 +78,10 @@ class _MainLayoutState extends State<MainLayout> {
       if (index == 1) {
         _selectedProjectId = null;
       }
+      // Clear project filter when navigating to My Issues from sidebar
+      if (index == 2) {
+        _selectedProjectId = null;
+      }
     });
 
     // Update URL based on navigation
@@ -58,6 +89,17 @@ class _MainLayoutState extends State<MainLayout> {
       context.go('/projects');
     } else if (index == 1) {
       context.go('/issues');
+    } else if (index == 2) {
+      // Navigate to My Issues with assignee filter
+      final currentUserId = UserSession.instance.userId;
+      if (currentUserId != null) {
+        final uri = Uri(
+            path: '/issues',
+            queryParameters: {'assignees': currentUserId.toString()});
+        context.go(uri.toString());
+      } else {
+        context.go('/issues');
+      }
     }
   }
 

@@ -46,7 +46,10 @@ class _LoginScreenState extends State<LoginScreen> {
       final data = json.decode(response.body);
 
       if (response.statusCode == 200 && data['success'] == true) {
-        // Login successful
+        // Login successful - store user session
+        final user = data['user'];
+        UserSession.instance.setUser(user['id'], user['username']);
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(

@@ -1,6 +1,33 @@
 import 'dart:convert';
 import 'package:flutter/services.dart';
 
+class UserSession {
+  static UserSession? _instance;
+  static UserSession get instance {
+    _instance ??= UserSession._internal();
+    return _instance!;
+  }
+
+  UserSession._internal();
+
+  int? _userId;
+  String? _username;
+
+  void setUser(int userId, String username) {
+    _userId = userId;
+    _username = username;
+  }
+
+  void clearUser() {
+    _userId = null;
+    _username = null;
+  }
+
+  int? get userId => _userId;
+  String? get username => _username;
+  bool get isLoggedIn => _userId != null && _username != null;
+}
+
 class Config {
   static Config? _instance;
   static Config get instance {
