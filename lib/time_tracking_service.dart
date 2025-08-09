@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:async';
-import 'package:http/http.dart' as http;
 import 'config.dart';
 import 'http_service.dart';
 
@@ -68,7 +67,6 @@ class TimeTrackingService {
       }
       return false;
     } catch (e) {
-      print('Error starting timer: $e');
       return false;
     }
   }
@@ -100,7 +98,6 @@ class TimeTrackingService {
       }
       return false;
     } catch (e) {
-      print('Error stopping timer: $e');
       return false;
     }
   }
@@ -134,7 +131,6 @@ class TimeTrackingService {
       }
       return false;
     } catch (e) {
-      print('Error stopping timer manually: $e');
       return false;
     }
   }
@@ -171,7 +167,6 @@ class TimeTrackingService {
       }
       return null;
     } catch (e) {
-      print('Error getting active timer: $e');
       return null;
     }
   }
@@ -206,7 +201,6 @@ class TimeTrackingService {
       }
       return null;
     } catch (e) {
-      print('Error getting time stats: $e');
       return null;
     }
   }

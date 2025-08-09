@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'config.dart';
 import 'time_tracking_service.dart';
@@ -74,18 +73,8 @@ class _ProjectsPageState extends State<ProjectsPage> {
 
     try {
       final url = Config.instance.buildApiUrl('projects.php');
-      print('Projects: Attempting to fetch from: $url');
-      print(
-          'Projects: User session - isLoggedIn: ${UserSession.instance.isLoggedIn}');
-      print('Projects: User session - userId: ${UserSession.instance.userId}');
-      print(
-          'Projects: User session - username: ${UserSession.instance.username}');
-      print(
-          'Projects: User session - sessionToken: ${UserSession.instance.sessionToken}');
 
       final response = await HttpService().get(url);
-      print('Projects: Response status: ${response.statusCode}');
-      print('Projects: Response body: ${response.body}');
 
       // Handle authentication errors
       if (HttpService().handleAuthError(response)) {
@@ -116,7 +105,6 @@ class _ProjectsPageState extends State<ProjectsPage> {
               await _loadTimeStats();
             } catch (e) {
               // Don't fail the entire load for time stats
-              print('Warning: Failed to load time stats: $e');
             }
           }
 
@@ -197,7 +185,6 @@ class _ProjectsPageState extends State<ProjectsPage> {
     if (result != null) {
       try {
         final url = Config.instance.buildApiUrl('projects.php');
-        print('Projects: Creating project at: $url');
 
         final response = await HttpService().post(url, body: result);
 
@@ -256,7 +243,6 @@ class _ProjectsPageState extends State<ProjectsPage> {
     if (result != null) {
       try {
         final url = Config.instance.buildApiUrl('projects.php');
-        print('Projects: Updating project at: $url');
 
         final response = await HttpService().put(url, body: result);
 
@@ -329,7 +315,6 @@ class _ProjectsPageState extends State<ProjectsPage> {
     if (confirmed == true) {
       try {
         final url = Config.instance.buildApiUrl('projects.php');
-        print('Projects: Deleting project at: $url');
 
         final response =
             await HttpService().delete(url, body: {'id': project.id});

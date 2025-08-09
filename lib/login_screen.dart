@@ -29,7 +29,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       final url = Config.instance.buildApiUrl('login.php');
-      print('Attempting to connect to: $url');
 
       final response = await http.post(
         Uri.parse(url),
@@ -39,9 +38,6 @@ class _LoginScreenState extends State<LoginScreen> {
           'password': _passwordController.text,
         }),
       );
-
-      print('Response status: ${response.statusCode}');
-      print('Response body: ${response.body}');
 
       final data = json.decode(response.body);
 
@@ -66,7 +62,9 @@ class _LoginScreenState extends State<LoginScreen> {
           await Future.delayed(const Duration(milliseconds: 100));
 
           // Navigate to main layout
-          context.go('/projects');
+          if (mounted) {
+            context.go('/projects');
+          }
         }
       } else {
         // Login failed

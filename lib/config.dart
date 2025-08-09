@@ -18,12 +18,9 @@ class UserSession {
     _userId = userId;
     _username = username;
     _sessionToken = sessionToken;
-    print(
-        'UserSession: User set - userId: $userId, username: $username, sessionToken: $sessionToken');
   }
 
   void clearUser() {
-    print('UserSession: Clearing user session');
     _userId = null;
     _username = null;
     _sessionToken = null;
@@ -35,8 +32,6 @@ class UserSession {
   bool get isLoggedIn {
     final loggedIn =
         _userId != null && _username != null && _sessionToken != null;
-    print(
-        'UserSession: isLoggedIn check - userId: $_userId, username: $_username, sessionToken: $_sessionToken, result: $loggedIn');
     return loggedIn;
   }
 }
@@ -57,17 +52,11 @@ class Config {
       final String configString =
           await rootBundle.loadString('assets/config.json');
       _config = json.decode(configString) as Map<String, dynamic>;
-      print('Config: Successfully loaded config.json');
-      print('Config: Backend URL = ${_config['backend']['url']}');
     } catch (e) {
       // Fallback configuration for web deployment issues
-      print(
-          'Warning: Failed to load config.json, using fallback configuration: $e');
       _config = {
         'backend': {'url': 'http://sp-be.diaven.de'}
       };
-      print(
-          'Config: Using fallback backend URL = ${_config['backend']['url']}');
     }
   }
 
@@ -92,7 +81,6 @@ class Config {
 
     // Build the URL
     final url = '$baseUrl/$cleanEndpoint';
-    print('Config: Building URL for endpoint "$endpoint" -> "$url"');
 
     return url;
   }

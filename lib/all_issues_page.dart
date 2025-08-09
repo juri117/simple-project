@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:http/http.dart' as http;
 import 'package:go_router/go_router.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'dart:convert';
@@ -292,69 +291,47 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
 
   void _parseUrlFilters() {
     try {
-      // Try to get router state, but handle the case where it's not available
-      final routerState = GoRouterState.of(context);
-      final uri = Uri.parse(routerState.uri.toString());
-
-      // Only parse URL filters if there are query parameters
-      // This prevents overwriting the initial project selection when navigating from projects
-      if (uri.queryParameters.isNotEmpty) {
-        // Parse project filters (only if not already set by initialProjectId)
-        if (uri.queryParameters['projects'] != null &&
-            widget.initialProjectId == null) {
-          final projectIds = uri.queryParameters['projects']!.split(',');
-          _selectedProjects = projectIds
-              .where((id) => id.isNotEmpty)
-              .map((id) => int.tryParse(id))
-              .where((id) => id != null)
-              .map((id) => id!)
-              .toSet();
-        }
-
-        // Parse assignee filters (only if not already set by initialAssigneeId)
-        if (uri.queryParameters['assignees'] != null &&
-            widget.initialAssigneeId == null) {
-          final assigneeIds = uri.queryParameters['assignees']!.split(',');
-          _selectedAssignees = assigneeIds
-              .where((id) => id.isNotEmpty)
-              .map((id) => int.tryParse(id))
-              .where((id) => id != null)
-              .map((id) => id!)
-              .toSet();
-        }
-
-        // Parse creator filters
-        if (uri.queryParameters['creators'] != null) {
-          final creatorIds = uri.queryParameters['creators']!.split(',');
-          _selectedCreators = creatorIds
-              .where((id) => id.isNotEmpty)
-              .map((id) => int.tryParse(id))
-              .where((id) => id != null)
-              .map((id) => id!)
-              .toSet();
-        }
-
-        // Parse status filters
-        if (uri.queryParameters['statuses'] != null) {
-          _selectedStatuses =
-              uri.queryParameters['statuses']!.split(',').toSet();
-        }
-
-        // Parse priority filters
-        if (uri.queryParameters['priorities'] != null) {
-          _selectedPriorities =
-              uri.queryParameters['priorities']!.split(',').toSet();
-        }
-
-        // Parse tag filters
-        if (uri.queryParameters['tags'] != null) {
-          _selectedTags = uri.queryParameters['tags']!.split(',').toSet();
-        }
+      final uri = GoRouterState.of(context).uri;
+      if (uri.queryParameters['projects'] != null) {
+        _selectedProjects = uri.queryParameters['projects']!
+            .split(',')
+            .where((id) => id.isNotEmpty)
+            .map((id) => int.tryParse(id))
+            .where((id) => id != null)
+            .map((id) => id!)
+            .toSet();
+      }
+      if (uri.queryParameters['assignees'] != null) {
+        _selectedAssignees = uri.queryParameters['assignees']!
+            .split(',')
+            .where((id) => id.isNotEmpty)
+            .map((id) => int.tryParse(id))
+            .where((id) => id != null)
+            .map((id) => id!)
+            .toSet();
+      }
+      if (uri.queryParameters['creators'] != null) {
+        _selectedCreators = uri.queryParameters['creators']!
+            .split(',')
+            .where((id) => id.isNotEmpty)
+            .map((id) => int.tryParse(id))
+            .where((id) => id != null)
+            .map((id) => id!)
+            .toSet();
+      }
+      if (uri.queryParameters['statuses'] != null) {
+        _selectedStatuses = uri.queryParameters['statuses']!.split(',').toSet();
+      }
+      if (uri.queryParameters['priorities'] != null) {
+        _selectedPriorities =
+            uri.queryParameters['priorities']!.split(',').toSet();
+      }
+      if (uri.queryParameters['tags'] != null) {
+        _selectedTags = uri.queryParameters['tags']!.split(',').toSet();
       }
     } catch (e) {
       // If router state is not available, skip URL parsing
       // This can happen when the widget is created as a child of another route
-      print('Warning: Could not parse URL filters: $e');
     }
   }
 
@@ -387,7 +364,6 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
       context.go(uri.toString());
     } catch (e) {
       // If router state is not available, skip URL update
-      print('Warning: Could not update URL filters: $e');
     }
   }
 
@@ -430,7 +406,6 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
         await _loadTimeStats();
       } catch (e) {
         // Don't fail the entire load for time stats
-        print('Warning: Failed to load time stats: $e');
       }
     }
 
@@ -1480,7 +1455,9 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
 
   Widget _buildKanbanBoard() {
     final filteredIssues = _getFilteredIssues();
-    final allStatuses = _getUniqueStatuses().toList()..sort();
+
+    // Define all possible statuses in the desired order
+    final allPossibleStatuses = ['open', 'in_progress', 'completed', 'closed'];
 
     return RefreshIndicator(
       onRefresh: _loadAllIssues,
@@ -1488,7 +1465,7 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
         scrollDirection: Axis.horizontal,
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: allStatuses.map((status) {
+          children: allPossibleStatuses.map((status) {
             final statusIssues = filteredIssues
                 .where((issue) => issue.status == status)
                 .toList();
@@ -1559,9 +1536,10 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
               ),
             ),
             child: DragTarget<Issue>(
-              onWillAccept: (data) => data != null && data.status != status,
-              onAccept: (issue) {
-                _updateIssueStatus(issue, status);
+              onWillAcceptWithDetails: (details) =>
+                  details.data.status != status,
+              onAcceptWithDetails: (details) {
+                _updateIssueStatus(details.data, status);
               },
               builder: (context, candidateData, rejectedData) {
                 return Container(
@@ -1745,9 +1723,9 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
                 Expanded(
                   child: Text(
                     issue.projectName,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 11,
-                      color: const Color(0xFF667eea),
+                      color: Color(0xFF667eea),
                       fontWeight: FontWeight.w500,
                     ),
                     overflow: TextOverflow.ellipsis,
@@ -1760,18 +1738,18 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
             if (issue.tags.isNotEmpty)
               Row(
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.label,
                     size: 12,
-                    color: Colors.grey[600],
+                    color: Color(0xFF757575),
                   ),
                   const SizedBox(width: 4),
                   Expanded(
                     child: Text(
                       issue.tags,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 11,
-                        color: Colors.grey[600],
+                        color: Color(0xFF757575),
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -1844,8 +1822,8 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
                   icon: const Icon(Icons.delete, size: 16),
                   tooltip: 'Delete issue',
                   style: IconButton.styleFrom(
-                    backgroundColor: Colors.red[50],
-                    foregroundColor: Colors.red[700],
+                    backgroundColor: const Color(0xFFFFEBEE),
+                    foregroundColor: const Color(0xFFD32F2F),
                     padding: const EdgeInsets.all(4),
                   ),
                 ),

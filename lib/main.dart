@@ -39,8 +39,8 @@ final GoRouter _router = GoRouter(
     ),
     GoRoute(
       path: '/projects',
-      pageBuilder: (context, state) => NoTransitionPage(
-        child: const MainLayout(initialIndex: 0),
+      pageBuilder: (context, state) => const NoTransitionPage(
+        child: MainLayout(initialIndex: 0),
       ),
     ),
     GoRoute(

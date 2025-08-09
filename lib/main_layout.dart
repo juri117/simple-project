@@ -127,15 +127,15 @@ class _MainLayoutState extends State<MainLayout> {
                     key: const ValueKey('timer_header'),
                     padding:
                         const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[50],
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFFAFAFA),
                       border:
-                          Border(bottom: BorderSide(color: Colors.grey[300]!)),
+                          Border(bottom: BorderSide(color: Color(0xFFE0E0E0))),
                     ),
-                    child: Row(
+                    child: const Row(
                       children: [
-                        const TimerWidget(),
-                        const Spacer(),
+                        TimerWidget(),
+                        Spacer(),
                       ],
                     ),
                   ),
@@ -184,7 +184,7 @@ class _MainLayoutState extends State<MainLayout> {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
@@ -332,7 +332,7 @@ class _MainLayoutState extends State<MainLayout> {
 
   Future<void> _logout() async {
     try {
-      final response = await HttpService().post(
+      await HttpService().post(
         Config.instance.buildApiUrl('logout.php'),
       );
 
