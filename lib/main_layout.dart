@@ -161,7 +161,7 @@ class _MainLayoutState extends State<MainLayout> {
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(20),
-            decoration: const BoxDecoration(color: Color(0xFF667eea)),
+            decoration: const BoxDecoration(color: Color(0xFF008080)),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -223,7 +223,7 @@ class _MainLayoutState extends State<MainLayout> {
                   ),
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? const Color(0xFF667eea)
+                        ? const Color(0xFF008080)
                         : Colors.transparent,
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -272,7 +272,7 @@ class _MainLayoutState extends State<MainLayout> {
         children: [
           // Header
           const DrawerHeader(
-            decoration: BoxDecoration(color: Color(0xFF667eea)),
+            decoration: BoxDecoration(color: Color(0xFF008080)),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -304,13 +304,13 @@ class _MainLayoutState extends State<MainLayout> {
                   leading: Icon(
                     item.icon,
                     color:
-                        isSelected ? const Color(0xFF667eea) : Colors.grey[600],
+                        isSelected ? const Color(0xFF008080) : Colors.grey[600],
                   ),
                   title: Text(
                     item.label,
                     style: TextStyle(
                       color: isSelected
-                          ? const Color(0xFF667eea)
+                          ? const Color(0xFF008080)
                           : Colors.grey[800],
                       fontWeight:
                           isSelected ? FontWeight.bold : FontWeight.normal,

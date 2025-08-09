@@ -1065,14 +1065,14 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
           // Filter row
           Row(
             children: [
-              const Icon(Icons.filter_list, size: 16, color: Color(0xFF667eea)),
+              const Icon(Icons.filter_list, size: 16, color: Color(0xFF008080)),
               const SizedBox(width: 8),
               const Text(
                 'Filters:',
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
-                  color: Color(0xFF667eea),
+                  color: Color(0xFF008080),
                 ),
               ),
               const SizedBox(width: 16),
@@ -1248,11 +1248,11 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
           color: selectedValues.isNotEmpty
-              ? const Color(0xFF667eea).withValues(alpha: 0.1)
+              ? const Color(0xFF008080).withValues(alpha: 0.1)
               : Colors.white,
           border: Border.all(
             color: selectedValues.isNotEmpty
-                ? const Color(0xFF667eea)
+                ? const Color(0xFF008080)
                 : Colors.grey[300]!,
             width: selectedValues.isNotEmpty ? 1.5 : 1,
           ),
@@ -1265,7 +1265,7 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
               icon,
               size: 14,
               color: selectedValues.isNotEmpty
-                  ? const Color(0xFF667eea)
+                  ? const Color(0xFF008080)
                   : Colors.grey[600],
             ),
             const SizedBox(width: 6),
@@ -1274,7 +1274,7 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
               style: TextStyle(
                 fontSize: 12,
                 color: selectedValues.isNotEmpty
-                    ? const Color(0xFF667eea)
+                    ? const Color(0xFF008080)
                     : Colors.grey[700],
                 fontWeight: selectedValues.isNotEmpty
                     ? FontWeight.w500
@@ -1286,7 +1286,7 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
               Icons.arrow_drop_down,
               size: 16,
               color: selectedValues.isNotEmpty
-                  ? const Color(0xFF667eea)
+                  ? const Color(0xFF008080)
                   : Colors.grey[600],
             ),
           ],
@@ -1311,7 +1311,7 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
                   isSelected ? Icons.check_box : Icons.check_box_outline_blank,
                   size: 16,
                   color:
-                      isSelected ? const Color(0xFF667eea) : Colors.grey[600],
+                      isSelected ? const Color(0xFF008080) : Colors.grey[600],
                 ),
                 const SizedBox(width: 8),
                 Expanded(
@@ -1320,7 +1320,7 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
                     style: TextStyle(
                       fontSize: 12,
                       color: isSelected
-                          ? const Color(0xFF667eea)
+                          ? const Color(0xFF008080)
                           : Colors.grey[700],
                       fontWeight:
                           isSelected ? FontWeight.w500 : FontWeight.normal,
@@ -1391,7 +1391,7 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
       margin: const EdgeInsets.only(right: 8),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: const Color(0xFF667eea),
+        color: const Color(0xFF008080),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Text(
@@ -1414,7 +1414,7 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
               ? _getProjectName(_selectedProjects.first)
               : 'All Issues',
         ),
-        backgroundColor: const Color(0xFF667eea),
+        backgroundColor: const Color(0xFF008080),
         foregroundColor: Colors.white,
         leading: MediaQuery.of(context).size.width < 768
             ? IconButton(
@@ -1899,7 +1899,7 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _createIssue,
-        backgroundColor: const Color(0xFF667eea),
+        backgroundColor: const Color(0xFF008080),
         foregroundColor: Colors.white,
         heroTag: 'issues_fab',
         child: const Icon(Icons.add),

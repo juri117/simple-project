@@ -385,7 +385,7 @@ class _ProjectsPageState extends State<ProjectsPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Projects'),
-        backgroundColor: const Color(0xFF667eea),
+        backgroundColor: const Color(0xFF008080),
         foregroundColor: Colors.white,
         leading: MediaQuery.of(context).size.width < 768
             ? IconButton(
@@ -596,7 +596,7 @@ class _ProjectsPageState extends State<ProjectsPage> {
                     ),
       floatingActionButton: FloatingActionButton(
         onPressed: _createProject,
-        backgroundColor: const Color(0xFF667eea),
+        backgroundColor: const Color(0xFF008080),
         foregroundColor: Colors.white,
         heroTag: 'projects_fab',
         child: const Icon(Icons.add),
