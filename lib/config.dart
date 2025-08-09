@@ -18,9 +18,12 @@ class UserSession {
     _userId = userId;
     _username = username;
     _sessionToken = sessionToken;
+    print(
+        'UserSession: User set - userId: $userId, username: $username, sessionToken: $sessionToken');
   }
 
   void clearUser() {
+    print('UserSession: Clearing user session');
     _userId = null;
     _username = null;
     _sessionToken = null;
@@ -29,8 +32,13 @@ class UserSession {
   int? get userId => _userId;
   String? get username => _username;
   String? get sessionToken => _sessionToken;
-  bool get isLoggedIn =>
-      _userId != null && _username != null && _sessionToken != null;
+  bool get isLoggedIn {
+    final loggedIn =
+        _userId != null && _username != null && _sessionToken != null;
+    print(
+        'UserSession: isLoggedIn check - userId: $_userId, username: $_username, sessionToken: $_sessionToken, result: $loggedIn');
+    return loggedIn;
+  }
 }
 
 class Config {

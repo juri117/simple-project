@@ -75,8 +75,17 @@ class _ProjectsPageState extends State<ProjectsPage> {
     try {
       final url = Config.instance.buildApiUrl('projects.php');
       print('Projects: Attempting to fetch from: $url');
+      print(
+          'Projects: User session - isLoggedIn: ${UserSession.instance.isLoggedIn}');
+      print('Projects: User session - userId: ${UserSession.instance.userId}');
+      print(
+          'Projects: User session - username: ${UserSession.instance.username}');
+      print(
+          'Projects: User session - sessionToken: ${UserSession.instance.sessionToken}');
 
       final response = await HttpService().get(url);
+      print('Projects: Response status: ${response.statusCode}');
+      print('Projects: Response body: ${response.body}');
 
       // Handle authentication errors
       if (HttpService().handleAuthError(response)) {

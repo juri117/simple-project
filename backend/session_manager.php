@@ -55,6 +55,7 @@ class SessionManager {
     
     public static function validateSession($sessionToken) {
         if (!$sessionToken) {
+            error_log("Session validation: No session token provided");
             return false;
         }
         
@@ -63,20 +64,30 @@ class SessionManager {
             
             // Check if session exists and is not expired
             $stmt = $pdo->prepare("
-                SELECT s.user_id, s.session_token, u.username 
+                SELECT s.user_id, s.session_token, s.expires_at, u.username 
                 FROM sessions s 
                 JOIN users u ON s.user_id = u.id 
-                WHERE s.session_token = ? AND s.expires_at > datetime('now')
+                WHERE s.session_token = ?
             ");
             $stmt->execute([$sessionToken]);
             $session = $stmt->fetch(PDO::FETCH_ASSOC);
             
             if ($session) {
-                return [
-                    'user_id' => $session['user_id'],
-                    'username' => $session['username'],
-                    'session_token' => $session['session_token']
-                ];
+                error_log("Session validation: Found session for user {$session['username']}, expires: {$session['expires_at']}");
+                
+                // Check if session is expired
+                if (strtotime($session['expires_at']) > time()) {
+                    error_log("Session validation: Session is valid");
+                    return [
+                        'user_id' => $session['user_id'],
+                        'username' => $session['username'],
+                        'session_token' => $session['session_token']
+                    ];
+                } else {
+                    error_log("Session validation: Session is expired");
+                }
+            } else {
+                error_log("Session validation: No session found for token: $sessionToken");
             }
             
             return false;

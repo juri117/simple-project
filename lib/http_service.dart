@@ -15,6 +15,10 @@ class HttpService {
 
     if (session.sessionToken != null) {
       headers['Authorization'] = 'Bearer ${session.sessionToken}';
+      print(
+          'HttpService: Adding Authorization header with token: ${session.sessionToken}');
+    } else {
+      print('HttpService: No session token available');
     }
 
     return headers;
@@ -54,6 +58,8 @@ class HttpService {
   // Helper method to handle authentication errors
   bool handleAuthError(http.Response response) {
     if (response.statusCode == 401) {
+      print('HttpService: Authentication error detected (401)');
+      print('HttpService: Response body: ${response.body}');
       // Clear user session on authentication error
       UserSession.instance.clearUser();
       return true; // Indicates auth error was handled
