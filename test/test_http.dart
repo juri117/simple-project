@@ -1,6 +1,6 @@
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'config.dart';
+import '../lib/config.dart';
 
 class HttpTest {
   static Future<void> testAuthHeader() async {
