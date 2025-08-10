@@ -2517,6 +2517,12 @@ class _IssueDialogState extends State<IssueDialog> {
       if (widget.projects.isNotEmpty) {
         _selectedProjectId = widget.projects.first.id;
       }
+
+      // Set the logged-in user as the default assignee for new issues
+      if (UserSession.instance.isLoggedIn &&
+          UserSession.instance.userId != null) {
+        _assigneeId = UserSession.instance.userId;
+      }
     }
   }
 
