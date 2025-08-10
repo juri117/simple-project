@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'projects_page.dart';
@@ -278,6 +279,19 @@ class _MainLayoutState extends State<MainLayout> {
               },
             ),
           ),
+          // Change Password button (only show if user is logged in)
+          if (UserSession.instance.isLoggedIn)
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              child: ListTile(
+                leading: const Icon(Icons.lock, color: Colors.white70),
+                title: const Text(
+                  'Change Password',
+                  style: TextStyle(color: Colors.white70),
+                ),
+                onTap: _showChangePasswordDialog,
+              ),
+            ),
           // Logout button (only show if user is logged in)
           if (UserSession.instance.isLoggedIn)
             Container(
@@ -360,6 +374,13 @@ class _MainLayoutState extends State<MainLayout> {
     );
   }
 
+  void _showChangePasswordDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => const SimpleChangePasswordDialog(),
+    );
+  }
+
   Future<void> _logout() async {
     try {
       await HttpService().post(
@@ -407,4 +428,182 @@ class NavigationItem {
     required this.label,
     required this.index,
   });
+}
+
+class SimpleChangePasswordDialog extends StatefulWidget {
+  const SimpleChangePasswordDialog({super.key});
+
+  @override
+  State<SimpleChangePasswordDialog> createState() =>
+      _SimpleChangePasswordDialogState();
+}
+
+class _SimpleChangePasswordDialogState
+    extends State<SimpleChangePasswordDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final _currentPasswordController = TextEditingController();
+  final _newPasswordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
+  bool _isLoading = false;
+
+  @override
+  void dispose() {
+    _currentPasswordController.dispose();
+    _newPasswordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Change Password'),
+      content: Form(
+        key: _formKey,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                controller: _currentPasswordController,
+                decoration: const InputDecoration(
+                  labelText: 'Current Password',
+                  border: OutlineInputBorder(),
+                ),
+                obscureText: true,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter your current password';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _newPasswordController,
+                decoration: const InputDecoration(
+                  labelText: 'New Password',
+                  border: OutlineInputBorder(),
+                ),
+                obscureText: true,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter a new password';
+                  }
+                  if (value.length < 6) {
+                    return 'Password must be at least 6 characters';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _confirmPasswordController,
+                decoration: const InputDecoration(
+                  labelText: 'Confirm New Password',
+                  border: OutlineInputBorder(),
+                ),
+                obscureText: true,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please confirm the new password';
+                  }
+                  if (value != _newPasswordController.text) {
+                    return 'Passwords do not match';
+                  }
+                  return null;
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          onPressed: _isLoading ? null : _changePassword,
+          child: _isLoading
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('Change Password'),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _changePassword() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final requestData = {
+        'current_password': _currentPasswordController.text,
+        'new_password': _newPasswordController.text,
+      };
+
+      final response = await HttpService().post(
+          Config.instance.buildApiUrl('change_password.php'),
+          body: requestData);
+
+      if (HttpService().handleAuthError(response)) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Authentication required. Please log in again.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['success'] == true) {
+          if (mounted) {
+            Navigator.of(context).pop();
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Password changed successfully'),
+                backgroundColor: Colors.green,
+              ),
+            );
+          }
+        } else {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(data['error'] ?? 'Failed to change password'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
 }
