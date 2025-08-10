@@ -1188,7 +1188,7 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
               const Icon(Icons.filter_list, size: 16, color: Color(0xFF008080)),
               const SizedBox(width: 8),
               const Text(
-                'Filters:',
+                ':',
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
@@ -1217,10 +1217,10 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
                 ),
               ),
               if (_hasActiveFilters()) ...[
-                TextButton.icon(
+                IconButton(
                   onPressed: _clearAllFilters,
                   icon: const Icon(Icons.clear, size: 14),
-                  label: const Text('Clear', style: TextStyle(fontSize: 12)),
+                  //label: const Text('', style: TextStyle(fontSize: 12)),
                   style: TextButton.styleFrom(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 8,
@@ -1229,10 +1229,10 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                TextButton.icon(
+                IconButton(
                   onPressed: _copyFilteredUrl,
                   icon: const Icon(Icons.copy, size: 14),
-                  label: const Text('Copy URL', style: TextStyle(fontSize: 12)),
+                  //label: const Text('Copy URL', style: TextStyle(fontSize: 12)),
                   style: TextButton.styleFrom(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 8,

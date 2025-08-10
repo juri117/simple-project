@@ -46,3 +46,6 @@ app.*.map.json
 
 
 **/*.sqlite
+
+# Deployment-specific configuration (overrides bundled config)
+config.json

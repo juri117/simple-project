@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/services.dart';
 
 class UserSession {
@@ -54,11 +55,29 @@ class Config {
 
   Future<void> load() async {
     try {
-      final String configString =
-          await rootBundle.loadString('assets/config.json');
+      String configString;
+
+      // First, try to load from project root (for deployment overrides)
+      try {
+        final file = File('config.json');
+        if (await file.exists()) {
+          configString = await file.readAsString();
+          print('Loaded config from project root: config.json');
+        } else {
+          // Fallback to bundled asset if root file doesn't exist
+          configString = await rootBundle.loadString('assets/config.json');
+          print('Loaded config from bundled asset: assets/config.json');
+        }
+      } catch (e) {
+        // If file system access fails (e.g., in web), fallback to bundled asset
+        configString = await rootBundle.loadString('assets/config.json');
+        print('Fallback to bundled asset due to error: $e');
+      }
+
       _config = json.decode(configString) as Map<String, dynamic>;
     } catch (e) {
-      // Fallback configuration for web deployment issues
+      // Final fallback configuration
+      print('Using fallback configuration due to error: $e');
       _config = {
         'backend': {'url': 'http://sp-be.diaven.de'}
       };
