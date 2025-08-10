@@ -207,9 +207,14 @@ class IssueDescriptionWidget extends StatelessWidget {
 class AllIssuesPage extends StatefulWidget {
   final int? initialProjectId;
   final int? initialAssigneeId;
+  final bool? initialKanbanView;
 
-  const AllIssuesPage(
-      {super.key, this.initialProjectId, this.initialAssigneeId});
+  const AllIssuesPage({
+    super.key,
+    this.initialProjectId,
+    this.initialAssigneeId,
+    this.initialKanbanView,
+  });
 
   @override
   State<AllIssuesPage> createState() => _AllIssuesPageState();
@@ -245,6 +250,10 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
     // Set initial assignee filter if provided
     if (widget.initialAssigneeId != null) {
       _selectedAssignees.add(widget.initialAssigneeId!);
+    }
+    // Set initial view mode if provided
+    if (widget.initialKanbanView != null) {
+      _isKanbanView = widget.initialKanbanView!;
     }
     _loadData();
   }
@@ -345,6 +354,9 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
       if (uri.queryParameters['tags'] != null) {
         _selectedTags = uri.queryParameters['tags']!.split(',').toSet();
       }
+      if (uri.queryParameters['view'] != null) {
+        _isKanbanView = uri.queryParameters['view'] == 'kanban';
+      }
     } catch (e) {
       // If router state is not available, skip URL parsing
       // This can happen when the widget is created as a child of another route
@@ -372,6 +384,9 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
       }
       if (_selectedTags.isNotEmpty) {
         queryParams['tags'] = _selectedTags.join(',');
+      }
+      if (_isKanbanView) {
+        queryParams['view'] = 'kanban';
       }
 
       final uri = Uri(
@@ -1968,6 +1983,7 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
               setState(() {
                 _isKanbanView = !_isKanbanView;
               });
+              _updateUrlFilters(); // Update URL when view mode changes
             },
             tooltip:
                 _isKanbanView ? 'Switch to List View' : 'Switch to Kanban View',

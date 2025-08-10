@@ -44,17 +44,19 @@ class _MainLayoutState extends State<MainLayout> {
       NavigationItem(icon: Icons.bug_report, label: 'All Issues', index: 1),
     ];
 
-    // Only show "My Issues" if user is logged in
+    // Only show "My Issues" and "My Board" if user is logged in
     if (UserSession.instance.isLoggedIn) {
       items.add(
           NavigationItem(icon: Icons.person, label: 'My Issues', index: 2));
+      items.add(
+          NavigationItem(icon: Icons.dashboard, label: 'My Board', index: 3));
     }
 
     // Only show "User Management" if user is admin
     if (UserSession.instance.isLoggedIn &&
         UserSession.instance.userRole == 'admin') {
       items.add(NavigationItem(
-          icon: Icons.people, label: 'User Management', index: 3));
+          icon: Icons.people, label: 'User Management', index: 4));
     }
 
     return items;
@@ -78,6 +80,14 @@ class _MainLayoutState extends State<MainLayout> {
         key: const ValueKey('my-issues'),
         initialProjectId: _selectedProjectId,
         initialAssigneeId: UserSession.instance.userId,
+      ));
+
+      // Add My Board page (Kanban view) if user is logged in
+      pages.add(AllIssuesPage(
+        key: const ValueKey('my-board'),
+        initialProjectId: _selectedProjectId,
+        initialAssigneeId: UserSession.instance.userId,
+        initialKanbanView: true,
       ));
     }
 
@@ -114,6 +124,10 @@ class _MainLayoutState extends State<MainLayout> {
       if (index == 2) {
         _selectedProjectId = null;
       }
+      // Clear project filter when navigating to My Board from sidebar
+      if (index == 3) {
+        _selectedProjectId = null;
+      }
     });
 
     // Update URL based on navigation
@@ -133,6 +147,18 @@ class _MainLayoutState extends State<MainLayout> {
         context.go('/issues');
       }
     } else if (index == 3) {
+      // Navigate to My Board with assignee filter (Kanban view)
+      final currentUserId = UserSession.instance.userId;
+      if (currentUserId != null) {
+        final uri = Uri(path: '/issues', queryParameters: {
+          'assignees': currentUserId.toString(),
+          'view': 'kanban'
+        });
+        context.go(uri.toString());
+      } else {
+        context.go('/issues');
+      }
+    } else if (index == 4) {
       // Navigate to User Management
       context.go('/user-management');
     }
