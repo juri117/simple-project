@@ -96,11 +96,20 @@ class Issue {
 class User {
   final int id;
   final String username;
+  final String role;
 
-  User({required this.id, required this.username});
+  User({
+    required this.id,
+    required this.username,
+    required this.role,
+  });
 
   factory User.fromJson(Map<String, dynamic> json) {
-    return User(id: json['id'], username: json['username']);
+    return User(
+      id: json['id'],
+      username: json['username'],
+      role: json['role'] ?? 'normal',
+    );
   }
 }
 
@@ -736,7 +745,7 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
               ? _users
                   .firstWhere(
                     (user) => user.username == issue.assigneeName,
-                    orElse: () => User(id: 0, username: ''),
+                    orElse: () => User(id: 0, username: '', role: 'normal'),
                   )
                   .id
                   .toString()
@@ -968,7 +977,7 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
         .map((issue) {
           final creator = _users.firstWhere(
             (user) => user.username == issue.creatorName,
-            orElse: () => User(id: 0, username: ''),
+            orElse: () => User(id: 0, username: '', role: 'normal'),
           );
           return creator.id;
         })
@@ -982,7 +991,7 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
           if (issue.assigneeName != null) {
             final assignee = _users.firstWhere(
               (user) => user.username == issue.assigneeName,
-              orElse: () => User(id: 0, username: ''),
+              orElse: () => User(id: 0, username: '', role: 'normal'),
             );
             return assignee.id;
           }
@@ -1031,7 +1040,7 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
       if (_selectedCreators.isNotEmpty) {
         final creator = _users.firstWhere(
           (user) => user.username == issue.creatorName,
-          orElse: () => User(id: 0, username: ''),
+          orElse: () => User(id: 0, username: '', role: 'normal'),
         );
         if (!_selectedCreators.contains(creator.id)) {
           return false;
@@ -1045,7 +1054,7 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
         }
         final assignee = _users.firstWhere(
           (user) => user.username == issue.assigneeName,
-          orElse: () => User(id: 0, username: ''),
+          orElse: () => User(id: 0, username: '', role: 'normal'),
         );
         if (!_selectedAssignees.contains(assignee.id)) {
           return false;
@@ -2499,7 +2508,7 @@ class _IssueDialogState extends State<IssueDialog> {
       // Find assignee ID by username
       final assignee = widget.users.firstWhere(
         (user) => user.username == widget.issue!.assigneeName,
-        orElse: () => User(id: 0, username: ''),
+        orElse: () => User(id: 0, username: '', role: 'normal'),
       );
       _assigneeId = assignee.id > 0 ? assignee.id : null;
       _selectedProjectId = widget.issue!.projectId;

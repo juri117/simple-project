@@ -1,6 +1,6 @@
 {
   "backend": {
-    "url": "https://diaven.de/sp/backend",
-    "url_": "http://localhost:8000"
+    "url_": "https://diaven.de/sp/backend",
+    "url": "http://localhost:8000"
   }
 }

@@ -61,6 +61,12 @@ final GoRouter _router = GoRouter(
         return NoTransitionPage(child: child);
       },
     ),
+    GoRoute(
+      path: '/user-management',
+      pageBuilder: (context, state) => const NoTransitionPage(
+        child: MainLayout(initialIndex: 3),
+      ),
+    ),
     // Redirect root to login
     GoRoute(
       path: '/',

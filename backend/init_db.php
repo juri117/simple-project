@@ -7,12 +7,14 @@ try {
     $pdo = new PDO("sqlite:$db_path");
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     
-    // Create users table
+    // Create users table with roles
     $sql = "CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT UNIQUE NOT NULL,
         password TEXT NOT NULL,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        role TEXT DEFAULT 'normal' CHECK (role IN ('normal', 'admin', 'deactivated')),
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )";
     
     $pdo->exec($sql);
@@ -67,23 +69,25 @@ try {
     
     $pdo->exec($sql);
     
-    // Insert sample user (password: admin123)
+    // Insert sample admin user (password: admin123)
     $username = 'admin';
     $password = password_hash('admin123', PASSWORD_DEFAULT);
     
-    $stmt = $pdo->prepare("INSERT OR IGNORE INTO users (username, password) VALUES (?, ?)");
+    $stmt = $pdo->prepare("INSERT OR IGNORE INTO users (username, password, role) VALUES (?, ?, 'admin')");
     $stmt->execute([$username, $password]);
     
-    // Insert additional sample users
+    // Insert additional sample users with roles
     $sample_users = [
-        ['john', 'password123'],
-        ['jane', 'password123'],
-        ['mike', 'password123']
+        ['john', 'password123', 'normal'],
+        ['jane', 'password123', 'normal'],
+        ['mike', 'password123', 'normal'],
+        ['sarah', 'password123', 'admin'],
+        ['bob', 'password123', 'deactivated']
     ];
     
     foreach ($sample_users as $user) {
-        $stmt = $pdo->prepare("INSERT OR IGNORE INTO users (username, password) VALUES (?, ?)");
-        $stmt->execute([$user[0], password_hash($user[1], PASSWORD_DEFAULT)]);
+        $stmt = $pdo->prepare("INSERT OR IGNORE INTO users (username, password, role) VALUES (?, ?, ?)");
+        $stmt->execute([$user[0], password_hash($user[1], PASSWORD_DEFAULT), $user[2]]);
     }
     
     // Insert sample projects

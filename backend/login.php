@@ -35,11 +35,21 @@ try {
     $pdo = DatabaseHelper::getConnection();
     
     // Find user by username
-    $stmt = $pdo->prepare("SELECT id, username, password FROM users WHERE username = ?");
+    $stmt = $pdo->prepare("SELECT id, username, password, role FROM users WHERE username = ?");
     $stmt->execute([$username]);
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
     
     if ($user && password_verify($password, $user['password'])) {
+        // Check if user is deactivated
+        if ($user['role'] === 'deactivated') {
+            http_response_code(401);
+            echo json_encode([
+                'success' => false,
+                'error' => 'Account is deactivated'
+            ]);
+            exit();
+        }
+        
         // Create session for the user
         $sessionToken = SessionManager::createSession($user['id'], $user['username']);
         
@@ -50,7 +60,8 @@ try {
                 'message' => 'Login successful',
                 'user' => [
                     'id' => $user['id'],
-                    'username' => $user['username']
+                    'username' => $user['username'],
+                    'role' => $user['role']
                 ],
                 'session_token' => $sessionToken
             ]);

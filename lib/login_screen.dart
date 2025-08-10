@@ -45,8 +45,8 @@ class _LoginScreenState extends State<LoginScreen> {
         // Login successful - store user session
         final user = data['user'];
         final sessionToken = data['session_token'];
-        UserSession.instance
-            .setUser(user['id'], user['username'], sessionToken);
+        UserSession.instance.setUser(user['id'], user['username'], sessionToken,
+            role: user['role']);
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(

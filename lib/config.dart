@@ -13,22 +13,27 @@ class UserSession {
   int? _userId;
   String? _username;
   String? _sessionToken;
+  String? _userRole;
 
-  void setUser(int userId, String username, String sessionToken) {
+  void setUser(int userId, String username, String sessionToken,
+      {String? role}) {
     _userId = userId;
     _username = username;
     _sessionToken = sessionToken;
+    _userRole = role ?? 'normal';
   }
 
   void clearUser() {
     _userId = null;
     _username = null;
     _sessionToken = null;
+    _userRole = null;
   }
 
   int? get userId => _userId;
   String? get username => _username;
   String? get sessionToken => _sessionToken;
+  String? get userRole => _userRole;
   bool get isLoggedIn {
     final loggedIn =
         _userId != null && _username != null && _sessionToken != null;

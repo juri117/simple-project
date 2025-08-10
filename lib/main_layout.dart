@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'projects_page.dart';
 import 'all_issues_page.dart';
+import 'user_management_page.dart';
 import 'config.dart';
 import 'timer_widget.dart';
 import 'http_service.dart';
@@ -24,6 +25,16 @@ class _MainLayoutState extends State<MainLayout> {
   void initState() {
     super.initState();
     _selectedIndex = widget.initialIndex;
+    _validateSelectedIndex();
+  }
+
+  void _validateSelectedIndex() {
+    final pagesLength = _pages.length;
+    if (_selectedIndex >= pagesLength) {
+      setState(() {
+        _selectedIndex = 0;
+      });
+    }
   }
 
   List<NavigationItem> get _navigationItems {
@@ -36,6 +47,13 @@ class _MainLayoutState extends State<MainLayout> {
     if (UserSession.instance.isLoggedIn) {
       items.add(
           NavigationItem(icon: Icons.person, label: 'My Issues', index: 2));
+    }
+
+    // Only show "User Management" if user is admin
+    if (UserSession.instance.isLoggedIn &&
+        UserSession.instance.userRole == 'admin') {
+      items.add(NavigationItem(
+          icon: Icons.people, label: 'User Management', index: 3));
     }
 
     return items;
@@ -59,6 +77,14 @@ class _MainLayoutState extends State<MainLayout> {
         key: const ValueKey('my-issues'),
         initialProjectId: _selectedProjectId,
         initialAssigneeId: UserSession.instance.userId,
+      ));
+    }
+
+    // Add User Management page if user is admin
+    if (UserSession.instance.isLoggedIn &&
+        UserSession.instance.userRole == 'admin') {
+      pages.add(const UserManagementPage(
+        key: ValueKey('user-management'),
       ));
     }
 
@@ -105,11 +131,15 @@ class _MainLayoutState extends State<MainLayout> {
       } else {
         context.go('/issues');
       }
+    } else if (index == 3) {
+      // Navigate to User Management
+      context.go('/user-management');
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    _validateSelectedIndex();
     return Scaffold(
       key: _scaffoldKey,
       drawer: _buildDrawer(),

@@ -62,9 +62,9 @@ class SessionManager {
         try {
             $pdo = self::getConnection();
             
-            // Check if session exists and is not expired
+            // Check if session exists and is not expired, include user role
             $stmt = $pdo->prepare("
-                SELECT s.user_id, s.session_token, s.expires_at, u.username 
+                SELECT s.user_id, s.session_token, s.expires_at, u.username, u.role
                 FROM sessions s 
                 JOIN users u ON s.user_id = u.id 
                 WHERE s.session_token = ?
@@ -81,6 +81,7 @@ class SessionManager {
                     return [
                         'user_id' => $session['user_id'],
                         'username' => $session['username'],
+                        'role' => $session['role'],
                         'session_token' => $session['session_token']
                     ];
                 } else {
