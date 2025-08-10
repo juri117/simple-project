@@ -281,9 +281,16 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
     } else {
       // Set default status filter if no status filters are selected
       if (_selectedStatuses.isEmpty) {
-        final allStatuses = _getUniqueStatuses();
+        // Use all possible statuses except 'closed' for default filter
+        final allPossibleStatuses = [
+          'new',
+          'in_progress',
+          'verification',
+          'completed',
+          'closed'
+        ];
         _selectedStatuses =
-            allStatuses.where((status) => status != 'closed').toSet();
+            allPossibleStatuses.where((status) => status != 'closed').toSet();
         setState(() {}); // Trigger rebuild to show the default filter
       }
     }
@@ -419,9 +426,17 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
           // Set default status filter to exclude 'closed' status
           // Only set default if no status filters are already selected
           if (_selectedStatuses.isEmpty) {
-            final allStatuses = _getUniqueStatuses();
-            _selectedStatuses =
-                allStatuses.where((status) => status != 'closed').toSet();
+            // Use all possible statuses except 'closed' for default filter
+            final allPossibleStatuses = [
+              'new',
+              'in_progress',
+              'verification',
+              'completed',
+              'closed'
+            ];
+            _selectedStatuses = allPossibleStatuses
+                .where((status) => status != 'closed')
+                .toSet();
           }
         }
       });
@@ -929,10 +944,6 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
   }
 
   // Get unique values for filters
-  Set<String> _getUniqueStatuses() {
-    return _issues.map((issue) => issue.status).toSet();
-  }
-
   Set<String> _getUniquePriorities() {
     return _issues.map((issue) => issue.priority).toSet();
   }
@@ -1247,10 +1258,19 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
   }
 
   Widget _buildCompactStatusFilter() {
+    // Use all possible statuses instead of just unique ones from current data
+    final allPossibleStatuses = [
+      'new',
+      'in_progress',
+      'verification',
+      'completed',
+      'closed'
+    ];
+
     return _buildCompactMultiSelectFilter(
       'Status',
       Icons.flag,
-      _getUniqueStatuses()
+      allPossibleStatuses
           .map((s) => FilterOption(s, s.replaceAll('_', ' ').toUpperCase()))
           .toList(),
       _selectedStatuses,
