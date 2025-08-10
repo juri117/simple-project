@@ -131,7 +131,7 @@ try {
             'project_id' => 1,
             'title' => 'Add unit tests',
             'description' => 'Implement comprehensive unit tests for all backend API endpoints.',
-            'status' => 'open',
+            'status' => 'verification',
             'priority' => 'medium',
             'tags' => 'testing,backend,quality',
             'creator_id' => 2,
@@ -156,6 +156,16 @@ try {
             'tags' => 'documentation,user-guide',
             'creator_id' => 3,
             'assignee_id' => 2
+        ],
+        [
+            'project_id' => 1,
+            'title' => 'Implement user dashboard',
+            'description' => 'Create a comprehensive user dashboard with analytics and reporting features.',
+            'status' => 'verification',
+            'priority' => 'high',
+            'tags' => 'frontend,dashboard,analytics',
+            'creator_id' => 1,
+            'assignee_id' => 3
         ]
     ];
     

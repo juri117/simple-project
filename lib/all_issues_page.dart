@@ -867,6 +867,8 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
         return Colors.blue;
       case 'in_progress':
         return Colors.orange;
+      case 'verification':
+        return Colors.purple;
       case 'completed':
         return Colors.green;
       case 'closed':
@@ -1457,7 +1459,13 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
     final filteredIssues = _getFilteredIssues();
 
     // Define all possible statuses in the desired order
-    final allPossibleStatuses = ['open', 'in_progress', 'completed', 'closed'];
+    final allPossibleStatuses = [
+      'open',
+      'in_progress',
+      'verification',
+      'completed',
+      'closed'
+    ];
 
     return RefreshIndicator(
       onRefresh: _loadAllIssues,
@@ -2553,6 +2561,10 @@ class _IssueDialogState extends State<IssueDialog> {
                         DropdownMenuItem(
                           value: 'in_progress',
                           child: Text('In Progress'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'verification',
+                          child: Text('Verification'),
                         ),
                         DropdownMenuItem(
                           value: 'completed',
