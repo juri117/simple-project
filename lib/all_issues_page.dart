@@ -775,6 +775,56 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
     }
   }
 
+  Future<void> _cleanupCompletedIssues(List<Issue> completedIssues) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Cleanup Completed Issues'),
+        content: Text(
+            'Are you sure you want to move ${completedIssues.length} completed issue${completedIssues.length == 1 ? '' : 's'} to closed?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(foregroundColor: Colors.orange),
+            child: const Text('Cleanup'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        // Update all completed issues to closed status
+        for (final issue in completedIssues) {
+          await _updateIssueStatus(issue, 'closed');
+        }
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                  'Moved ${completedIssues.length} issue${completedIssues.length == 1 ? '' : 's'} to closed'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error during cleanup: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
+  }
+
   Future<void> _deleteIssue(Issue issue) async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -1458,13 +1508,12 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
   Widget _buildKanbanBoard() {
     final filteredIssues = _getFilteredIssues();
 
-    // Define all possible statuses in the desired order
+    // Define all possible statuses in the desired order (excluding closed)
     final allPossibleStatuses = [
       'new',
       'in_progress',
       'verification',
-      'completed',
-      'closed'
+      'completed'
     ];
 
     return RefreshIndicator(
@@ -1502,15 +1551,16 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
             ),
             child: Row(
               children: [
-                Text(
-                  status.replaceAll('_', ' ').toUpperCase(),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
+                Expanded(
+                  child: Text(
+                    status.replaceAll('_', ' ').toUpperCase(),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
                   ),
                 ),
-                const SizedBox(width: 8),
                 Container(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -1527,6 +1577,25 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
                     ),
                   ),
                 ),
+                if (status == 'completed' && issues.isNotEmpty) ...[
+                  const SizedBox(width: 8),
+                  Tooltip(
+                    message: 'Move all completed issues to closed',
+                    child: IconButton(
+                      icon: const Icon(
+                        Icons.cleaning_services,
+                        color: Colors.white,
+                        size: 18,
+                      ),
+                      onPressed: () => _cleanupCompletedIssues(issues),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(
+                        minWidth: 24,
+                        minHeight: 24,
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
