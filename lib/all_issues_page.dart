@@ -1707,7 +1707,7 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
         borderRadius: BorderRadius.circular(8),
         child: Container(
           width: 300,
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(8),
@@ -1717,22 +1717,64 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                issue.title,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                issue.projectName,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey[600],
-                ),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              width: 8,
+                              height: 8,
+                              margin: const EdgeInsets.only(top: 4, right: 6),
+                              decoration: BoxDecoration(
+                                color: _getPriorityColor(issue.priority),
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            Expanded(
+                              child: Text(
+                                issue.title,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.folder,
+                              size: 11,
+                              color: Colors.grey[600],
+                            ),
+                            const SizedBox(width: 3),
+                            Expanded(
+                              child: Text(
+                                issue.projectName,
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  color: Color(0xFF667eea),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -1740,7 +1782,7 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
       ),
       childWhenDragging: Container(
         margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
           color: Colors.grey[200],
           borderRadius: BorderRadius.circular(8),
@@ -1748,30 +1790,73 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              issue.title,
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-                color: Colors.grey[600],
-              ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              issue.projectName,
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[500],
-              ),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            width: 8,
+                            height: 8,
+                            margin: const EdgeInsets.only(top: 4, right: 6),
+                            decoration: BoxDecoration(
+                              color: _getPriorityColor(issue.priority)
+                                  .withValues(alpha: 0.6),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          Expanded(
+                            child: Text(
+                              issue.title,
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                                color: Colors.grey[600],
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.folder,
+                            size: 11,
+                            color: Colors.grey[500],
+                          ),
+                          const SizedBox(width: 3),
+                          Expanded(
+                            child: Text(
+                              issue.projectName,
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: Colors.grey[500],
+                                fontWeight: FontWeight.w500,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ],
         ),
       ),
       child: Container(
         margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(8),
@@ -1787,176 +1872,193 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Priority badge
+            // Two-column layout: content on left, menu on right
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: _getPriorityColor(issue.priority),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(
-                    issue.priority.toUpperCase(),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                const Spacer(),
-                if (issue.totalTimeSeconds > 0)
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
+                // Left column: all content
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(
-                        Icons.timer,
-                        size: 12,
-                        color: Colors.grey[600],
+                      // Title with priority dot
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            width: 8,
+                            height: 8,
+                            margin: const EdgeInsets.only(top: 4, right: 6),
+                            decoration: BoxDecoration(
+                              color: _getPriorityColor(issue.priority),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          Expanded(
+                            child: Text(
+                              issue.title,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 2),
-                      Text(
-                        TimeTrackingService.instance
-                            .formatDurationHuman(issue.totalTimeSeconds),
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: Colors.grey[600],
-                          fontWeight: FontWeight.w500,
-                        ),
+                      const SizedBox(height: 6),
+                      // Project and assignee info
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.folder,
+                            size: 11,
+                            color: Colors.grey[600],
+                          ),
+                          const SizedBox(width: 3),
+                          Expanded(
+                            child: Text(
+                              issue.projectName,
+                              style: const TextStyle(
+                                fontSize: 10,
+                                color: Color(0xFF667eea),
+                                fontWeight: FontWeight.w500,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (issue.totalTimeSeconds > 0) ...[
+                            const SizedBox(width: 8),
+                            Icon(
+                              Icons.timer,
+                              size: 11,
+                              color: Colors.grey[600],
+                            ),
+                            const SizedBox(width: 2),
+                            Text(
+                              TimeTrackingService.instance
+                                  .formatDurationHuman(issue.totalTimeSeconds),
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: Colors.grey[600],
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                      const SizedBox(height: 3),
+                      // Assignee and tags in one line
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.person,
+                            size: 11,
+                            color: Colors.grey[600],
+                          ),
+                          const SizedBox(width: 3),
+                          Expanded(
+                            child: Text(
+                              issue.assigneeName ?? 'Unassigned',
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: Colors.grey[600],
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (issue.tags.isNotEmpty) ...[
+                            const SizedBox(width: 8),
+                            const Icon(
+                              Icons.label,
+                              size: 11,
+                              color: Color(0xFF757575),
+                            ),
+                            const SizedBox(width: 3),
+                            Expanded(
+                              child: Text(
+                                issue.tags,
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  color: Color(0xFF757575),
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                     ],
                   ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            // Title
-            Text(
-              issue.title,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-              ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 4),
-            // Project name
-            Row(
-              children: [
-                Icon(
-                  Icons.folder,
-                  size: 12,
-                  color: Colors.grey[600],
                 ),
-                const SizedBox(width: 4),
-                Expanded(
-                  child: Text(
-                    issue.projectName,
-                    style: const TextStyle(
-                      fontSize: 11,
-                      color: Color(0xFF667eea),
-                      fontWeight: FontWeight.w500,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            // Tags
-            if (issue.tags.isNotEmpty)
-              Row(
-                children: [
-                  const Icon(
-                    Icons.label,
-                    size: 12,
-                    color: Color(0xFF757575),
-                  ),
-                  const SizedBox(width: 4),
-                  Expanded(
-                    child: Text(
-                      issue.tags,
-                      style: const TextStyle(
-                        fontSize: 11,
-                        color: Color(0xFF757575),
+                // Right column: menu button
+                PopupMenuButton<String>(
+                  icon: const Icon(Icons.more_vert, size: 16),
+                  tooltip: 'More options',
+                  onSelected: (value) {
+                    switch (value) {
+                      case 'description':
+                        _showDescriptionDialog(issue);
+                        break;
+                      case 'timer':
+                        if (UserSession.instance.isLoggedIn) {
+                          _startTimer(issue);
+                        }
+                        break;
+                      case 'edit':
+                        _editIssue(issue);
+                        break;
+                      case 'delete':
+                        _deleteIssue(issue);
+                        break;
+                    }
+                  },
+                  itemBuilder: (context) => [
+                    const PopupMenuItem(
+                      value: 'description',
+                      child: Row(
+                        children: [
+                          Icon(Icons.info, size: 16),
+                          SizedBox(width: 8),
+                          Text('View description'),
+                        ],
                       ),
-                      overflow: TextOverflow.ellipsis,
                     ),
-                  ),
-                ],
-              ),
-            const SizedBox(height: 4),
-            // Assignee
-            Row(
-              children: [
-                Icon(
-                  Icons.person,
-                  size: 12,
-                  color: Colors.grey[600],
-                ),
-                const SizedBox(width: 4),
-                Expanded(
-                  child: Text(
-                    issue.assigneeName ?? 'Unassigned',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: Colors.grey[600],
+                    if (UserSession.instance.isLoggedIn)
+                      const PopupMenuItem(
+                        value: 'timer',
+                        child: Row(
+                          children: [
+                            Icon(Icons.play_arrow, size: 16),
+                            SizedBox(width: 8),
+                            Text('Start timer'),
+                          ],
+                        ),
+                      ),
+                    const PopupMenuItem(
+                      value: 'edit',
+                      child: Row(
+                        children: [
+                          Icon(Icons.edit, size: 16),
+                          SizedBox(width: 8),
+                          Text('Edit issue'),
+                        ],
+                      ),
                     ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            // Action buttons
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                IconButton(
-                  onPressed: () => _showDescriptionDialog(issue),
-                  icon: const Icon(Icons.info, size: 16),
-                  tooltip: 'View description',
-                  style: IconButton.styleFrom(
-                    backgroundColor:
-                        const Color(0xFF667eea).withValues(alpha: 0.1),
-                    foregroundColor: const Color(0xFF667eea),
-                    padding: const EdgeInsets.all(4),
-                  ),
-                ),
-                if (UserSession.instance.isLoggedIn)
-                  IconButton(
-                    onPressed: () => _startTimer(issue),
-                    icon: const Icon(Icons.play_arrow, size: 16),
-                    tooltip: 'Start timer',
-                    style: IconButton.styleFrom(
-                      backgroundColor:
-                          const Color(0xFF667eea).withValues(alpha: 0.1),
-                      foregroundColor: const Color(0xFF667eea),
-                      padding: const EdgeInsets.all(4),
+                    const PopupMenuItem(
+                      value: 'delete',
+                      child: Row(
+                        children: [
+                          Icon(Icons.delete,
+                              size: 16, color: Color(0xFFD32F2F)),
+                          SizedBox(width: 8),
+                          Text('Delete issue',
+                              style: TextStyle(color: Color(0xFFD32F2F))),
+                        ],
+                      ),
                     ),
-                  ),
-                IconButton(
-                  onPressed: () => _editIssue(issue),
-                  icon: const Icon(Icons.edit, size: 16),
-                  tooltip: 'Edit issue',
-                  style: IconButton.styleFrom(
-                    backgroundColor:
-                        const Color(0xFF667eea).withValues(alpha: 0.1),
-                    foregroundColor: const Color(0xFF667eea),
-                    padding: const EdgeInsets.all(4),
-                  ),
-                ),
-                IconButton(
-                  onPressed: () => _deleteIssue(issue),
-                  icon: const Icon(Icons.delete, size: 16),
-                  tooltip: 'Delete issue',
-                  style: IconButton.styleFrom(
-                    backgroundColor: const Color(0xFFFFEBEE),
-                    foregroundColor: const Color(0xFFD32F2F),
-                    padding: const EdgeInsets.all(4),
-                  ),
+                  ],
                 ),
               ],
             ),
