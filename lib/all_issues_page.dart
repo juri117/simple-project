@@ -1562,22 +1562,31 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
 
     return RefreshIndicator(
       onRefresh: _loadAllIssues,
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: allPossibleStatuses.map((status) {
-            final statusIssues = filteredIssues
-                .where((issue) => issue.status == status)
-                .toList();
-            return _buildKanbanColumn(status, statusIssues);
-          }).toList(),
-        ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          return SizedBox(
+            height: constraints.maxHeight,
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: allPossibleStatuses.map((status) {
+                  final statusIssues = filteredIssues
+                      .where((issue) => issue.status == status)
+                      .toList();
+                  return _buildKanbanColumn(
+                      status, statusIssues, constraints.maxHeight);
+                }).toList(),
+              ),
+            ),
+          );
+        },
       ),
     );
   }
 
-  Widget _buildKanbanColumn(String status, List<Issue> issues) {
+  Widget _buildKanbanColumn(
+      String status, List<Issue> issues, double availableHeight) {
     return Container(
       width: 320,
       margin: const EdgeInsets.all(8),
@@ -1644,10 +1653,11 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
             ),
           ),
           // Column content
-          Container(
-            constraints: const BoxConstraints(
-              minHeight: 400,
-              maxHeight: 600,
+          Expanded(
+              child: Container(
+            constraints: BoxConstraints(
+              minHeight: 200,
+              maxHeight: availableHeight - 100,
             ),
             decoration: BoxDecoration(
               color: Colors.grey[50],
@@ -1683,7 +1693,7 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
                 );
               },
             ),
-          ),
+          )),
         ],
       ),
     );
