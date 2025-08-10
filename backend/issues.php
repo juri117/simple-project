@@ -88,7 +88,7 @@ try {
             $project_id = (int)$input['project_id'];
             $title = trim($input['title']);
             $description = isset($input['description']) ? trim($input['description']) : '';
-            $status = isset($input['status']) ? $input['status'] : 'open';
+            $status = isset($input['status']) ? $input['status'] : 'new';
             $priority = isset($input['priority']) ? $input['priority'] : 'medium';
             $tags = isset($input['tags']) ? trim($input['tags']) : '';
             $creator_id = isset($input['creator_id']) ? (int)$input['creator_id'] : 1; // Default to admin
@@ -152,7 +152,7 @@ try {
             $id = (int)$input['id'];
             $title = isset($input['title']) ? trim($input['title']) : '';
             $description = isset($input['description']) ? trim($input['description']) : '';
-            $status = isset($input['status']) ? $input['status'] : 'open';
+            $status = isset($input['status']) ? $input['status'] : 'new';
             $priority = isset($input['priority']) ? $input['priority'] : 'medium';
             $tags = isset($input['tags']) ? trim($input['tags']) : '';
             $assignee_id = isset($input['assignee_id']) ? (int)$input['assignee_id'] : null;

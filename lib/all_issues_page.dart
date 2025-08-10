@@ -863,7 +863,7 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
 
   Color _getStatusColor(String status) {
     switch (status.toLowerCase()) {
-      case 'open':
+      case 'new':
         return Colors.blue;
       case 'in_progress':
         return Colors.orange;
@@ -1460,7 +1460,7 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
 
     // Define all possible statuses in the desired order
     final allPossibleStatuses = [
-      'open',
+      'new',
       'in_progress',
       'verification',
       'completed',
@@ -2392,7 +2392,7 @@ class _IssueDialogState extends State<IssueDialog> {
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _tagsController = TextEditingController();
-  String _status = 'open';
+  String _status = 'new';
   String _priority = 'medium';
   int? _assigneeId;
   int? _selectedProjectId;
@@ -2557,7 +2557,7 @@ class _IssueDialogState extends State<IssueDialog> {
                         border: OutlineInputBorder(),
                       ),
                       items: const [
-                        DropdownMenuItem(value: 'open', child: Text('Open')),
+                        DropdownMenuItem(value: 'new', child: Text('New')),
                         DropdownMenuItem(
                           value: 'in_progress',
                           child: Text('In Progress'),
