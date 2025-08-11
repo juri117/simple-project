@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:file_picker/file_picker.dart';
 import 'dart:convert';
 import 'config.dart';
 import 'time_tracking_service.dart';
 import 'http_service.dart';
+import 'file_attachment.dart';
 
 class FilterOption<T> {
   final T value;
@@ -57,6 +59,7 @@ class Issue {
   final String? assigneeName;
   final String projectName; // Added project name for all issues view
   final int totalTimeSeconds; // Total time spent on this issue
+  final List<FileAttachment> attachments; // File attachments
 
   Issue({
     required this.id,
@@ -72,9 +75,22 @@ class Issue {
     this.assigneeName,
     required this.projectName,
     this.totalTimeSeconds = 0,
+    this.attachments = const [],
   });
 
   factory Issue.fromJson(Map<String, dynamic> json) {
+    List<FileAttachment> attachments = [];
+    if (json['attachments'] != null) {
+      try {
+        attachments = (json['attachments'] as List)
+            .map((attachment) => FileAttachment.fromJson(attachment))
+            .toList();
+      } catch (e) {
+        print('Error parsing attachments: $e');
+        attachments = [];
+      }
+    }
+
     return Issue(
       id: json['id'],
       projectId: json['project_id'],
@@ -89,6 +105,7 @@ class Issue {
       assigneeName: json['assignee_name'],
       projectName: json['project_name'] ?? 'Unknown Project',
       totalTimeSeconds: json['total_time_seconds'] ?? 0,
+      attachments: attachments,
     );
   }
 }
@@ -1159,23 +1176,54 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Description: ${issue.title}'),
+        title: Text('Issue Details: ${issue.title}'),
         content: Container(
           width: double.maxFinite,
-          constraints: const BoxConstraints(maxHeight: 400),
+          constraints: const BoxConstraints(maxHeight: 600),
           child: SingleChildScrollView(
-            child: issue.description.isNotEmpty
-                ? IssueDescriptionWidget(
-                    description: issue.description,
-                    maxLines: 100,
-                  )
-                : const Text(
-                    'No description provided.',
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Description section
+                const Text(
+                  'Description',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                issue.description.isNotEmpty
+                    ? IssueDescriptionWidget(
+                        description: issue.description,
+                        maxLines: 100,
+                      )
+                    : const Text(
+                        'No description provided.',
+                        style: TextStyle(
+                          fontStyle: FontStyle.italic,
+                          color: Colors.grey,
+                        ),
+                      ),
+                const SizedBox(height: 16),
+                // Attachments section
+                if (issue.attachments.isNotEmpty) ...[
+                  const Text(
+                    'Attachments',
                     style: TextStyle(
-                      fontStyle: FontStyle.italic,
-                      color: Colors.grey,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
+                  const SizedBox(height: 8),
+                  ...issue.attachments.map((attachment) {
+                    return FileAttachmentWidget(
+                      attachment: attachment,
+                    );
+                  }).toList(),
+                ],
+              ],
+            ),
           ),
         ),
         actions: [
@@ -2457,6 +2505,8 @@ class _IssueDialogState extends State<IssueDialog> {
   int? _assigneeId;
   int? _selectedProjectId;
   bool _showDescriptionPreview = false;
+  List<FileAttachment> _attachments = [];
+  bool _isUploading = false;
 
   @override
   void initState() {
@@ -2474,6 +2524,7 @@ class _IssueDialogState extends State<IssueDialog> {
       );
       _assigneeId = assignee.id > 0 ? assignee.id : null;
       _selectedProjectId = widget.issue!.projectId;
+      _attachments = List.from(widget.issue!.attachments);
     } else {
       // For new issues, select the first project by default
       if (widget.projects.isNotEmpty) {
@@ -2494,6 +2545,76 @@ class _IssueDialogState extends State<IssueDialog> {
     _descriptionController.dispose();
     _tagsController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickAndUploadFiles() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        allowMultiple: true,
+        type: FileType.any,
+      );
+
+      if (result != null && result.files.isNotEmpty) {
+        setState(() {
+          _isUploading = true;
+        });
+
+        for (final file in result.files) {
+          if (file.path != null) {
+            try {
+              // For new issues, we'll need to create the issue first
+              if (widget.issue == null) {
+                // Store the file path for later upload after issue creation
+                // For now, we'll show a message that files can only be uploaded after creation
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                        'Files can be uploaded after the issue is created'),
+                    backgroundColor: Colors.orange,
+                  ),
+                );
+                break;
+              } else {
+                // Upload file for existing issue
+                final attachment = await FileUploadService().uploadFile(
+                  widget.issue!.id,
+                  file.path!,
+                );
+                if (attachment != null) {
+                  setState(() {
+                    _attachments.add(attachment);
+                  });
+                }
+              }
+            } catch (e) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Failed to upload ${file.name}: $e'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+          }
+        }
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error picking files: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      setState(() {
+        _isUploading = false;
+      });
+    }
+  }
+
+  void _removeAttachment(FileAttachment attachment) {
+    setState(() {
+      _attachments.remove(attachment);
+    });
   }
 
   @override
@@ -2697,6 +2818,84 @@ class _IssueDialogState extends State<IssueDialog> {
                     _assigneeId = value;
                   });
                 },
+              ),
+              const SizedBox(height: 16),
+              // File attachments section
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Text(
+                        'Attachments',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const Spacer(),
+                      if (widget.issue !=
+                          null) // Only show upload button for existing issues
+                        ElevatedButton.icon(
+                          onPressed: _isUploading ? null : _pickAndUploadFiles,
+                          icon: _isUploading
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child:
+                                      CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              : const Icon(Icons.upload_file),
+                          label: Text(
+                              _isUploading ? 'Uploading...' : 'Upload Files'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue[50],
+                            foregroundColor: Colors.blue[700],
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  if (_attachments.isNotEmpty) ...[
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey[300]!),
+                        borderRadius: BorderRadius.circular(4),
+                        color: Colors.grey[50],
+                      ),
+                      child: Column(
+                        children: _attachments.map((attachment) {
+                          return FileAttachmentWidget(
+                            attachment: attachment,
+                            onDelete: widget.issue != null
+                                ? () => _removeAttachment(attachment)
+                                : null,
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  ] else ...[
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey[300]!),
+                        borderRadius: BorderRadius.circular(4),
+                        color: Colors.grey[50],
+                      ),
+                      child: Text(
+                        widget.issue != null
+                            ? 'No attachments. Click "Upload Files" to add files.'
+                            : 'Files can be uploaded after the issue is created.',
+                        style: TextStyle(
+                          color: Colors.grey[600],
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ],
           ),

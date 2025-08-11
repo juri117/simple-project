@@ -1,5 +1,6 @@
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'dart:io';
 import 'config.dart';
 
 class HttpService {
@@ -59,5 +60,31 @@ class HttpService {
       return true; // Indicates auth error was handled
     }
     return false; // No auth error
+  }
+
+  // Create multipart request for file uploads
+  Future<http.MultipartRequest> createMultipartRequest(String url, String method) async {
+    final uri = Uri.parse(url);
+    final request = http.MultipartRequest(method, uri);
+    
+    // Add auth headers
+    final session = UserSession.instance;
+    if (session.sessionToken != null) {
+      request.headers['Authorization'] = 'Bearer ${session.sessionToken}';
+    }
+    
+    return request;
+  }
+
+  // Create multipart file from file path
+  Future<http.MultipartFile> createMultipartFile(String filePath) async {
+    final file = File(filePath);
+    final fileName = file.path.split('/').last;
+    
+    return await http.MultipartFile.fromPath(
+      'file',
+      filePath,
+      filename: fileName,
+    );
   }
 }

@@ -69,6 +69,22 @@ try {
     
     $pdo->exec($sql);
     
+    // Create file_attachments table
+    $sql = "CREATE TABLE IF NOT EXISTS file_attachments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        issue_id INTEGER NOT NULL,
+        original_filename TEXT NOT NULL,
+        stored_filename TEXT NOT NULL,
+        file_size INTEGER NOT NULL,
+        mime_type TEXT NOT NULL,
+        uploaded_by INTEGER NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (issue_id) REFERENCES issues (id),
+        FOREIGN KEY (uploaded_by) REFERENCES users (id)
+    )";
+    
+    $pdo->exec($sql);
+    
     // Insert sample admin user (password: admin123)
     $username = 'admin';
     $password = password_hash('admin123', PASSWORD_DEFAULT);

@@ -69,6 +69,22 @@ try {
             
             $issues = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
+            // Get file attachments for each issue
+            foreach ($issues as &$issue) {
+                $stmt = $pdo->prepare("
+                    SELECT 
+                        fa.id, fa.original_filename, fa.stored_filename, 
+                        fa.file_size, fa.mime_type, fa.created_at,
+                        COALESCE(u.username, 'Unknown') as uploaded_by_name
+                    FROM file_attachments fa
+                    LEFT JOIN users u ON fa.uploaded_by = u.id
+                    WHERE fa.issue_id = ?
+                    ORDER BY fa.created_at DESC
+                ");
+                $stmt->execute([$issue['id']]);
+                $issue['attachments'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            }
+            
             echo json_encode([
                 'success' => true,
                 'issues' => $issues
