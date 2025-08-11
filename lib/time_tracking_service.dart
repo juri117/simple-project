@@ -47,7 +47,7 @@ class TimeTrackingService {
       );
 
       // Handle authentication errors
-      if (HttpService().handleAuthError(response)) {
+      if (await HttpService().handleAuthError(response)) {
         return false;
       }
 
@@ -83,7 +83,7 @@ class TimeTrackingService {
       );
 
       // Handle authentication errors
-      if (HttpService().handleAuthError(response)) {
+      if (await HttpService().handleAuthError(response)) {
         return false;
       }
 
@@ -116,7 +116,7 @@ class TimeTrackingService {
       );
 
       // Handle authentication errors
-      if (HttpService().handleAuthError(response)) {
+      if (await HttpService().handleAuthError(response)) {
         return false;
       }
 
@@ -143,7 +143,7 @@ class TimeTrackingService {
       );
 
       // Handle authentication errors
-      if (HttpService().handleAuthError(response)) {
+      if (await HttpService().handleAuthError(response)) {
         return null;
       }
 
@@ -189,7 +189,7 @@ class TimeTrackingService {
       final response = await HttpService().get(uri.toString());
 
       // Handle authentication errors
-      if (HttpService().handleAuthError(response)) {
+      if (await HttpService().handleAuthError(response)) {
         return null;
       }
 

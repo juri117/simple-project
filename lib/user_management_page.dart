@@ -42,7 +42,7 @@ class _UserManagementPageState extends State<UserManagementPage> {
         Config.instance.buildApiUrl('users.php'),
       );
 
-      if (HttpService().handleAuthError(response)) {
+      if (await HttpService().handleAuthError(response)) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -298,7 +298,7 @@ class _UserManagementPageState extends State<UserManagementPage> {
       final response = await HttpService()
           .delete(Config.instance.buildApiUrl('users.php?id=${user.id}'));
 
-      if (HttpService().handleAuthError(response)) {
+      if (await HttpService().handleAuthError(response)) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -466,7 +466,7 @@ class _CreateUserDialogState extends State<CreateUserDialog> {
         'role': _selectedRole,
       });
 
-      if (HttpService().handleAuthError(response)) {
+      if (await HttpService().handleAuthError(response)) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -597,7 +597,7 @@ class _EditUserDialogState extends State<EditUserDialog> {
         'role': _selectedRole,
       });
 
-      if (HttpService().handleAuthError(response)) {
+      if (await HttpService().handleAuthError(response)) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -789,7 +789,7 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
             Config.instance.buildApiUrl('change_password.php'),
             body: requestData);
 
-        if (HttpService().handleAuthError(response)) {
+        if (await HttpService().handleAuthError(response)) {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
@@ -834,7 +834,7 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
         final response = await HttpService()
             .put(Config.instance.buildApiUrl('users.php'), body: requestData);
 
-        if (HttpService().handleAuthError(response)) {
+        if (await HttpService().handleAuthError(response)) {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(

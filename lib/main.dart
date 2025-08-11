@@ -10,6 +10,9 @@ void main() async {
   // Load configuration
   await Config.instance.load();
 
+  // Initialize user session from persistent storage
+  await UserSession.instance.initialize();
+
   runApp(const MyApp());
 }
 

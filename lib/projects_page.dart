@@ -77,7 +77,7 @@ class _ProjectsPageState extends State<ProjectsPage> {
       final response = await HttpService().get(url);
 
       // Handle authentication errors
-      if (HttpService().handleAuthError(response)) {
+      if (await HttpService().handleAuthError(response)) {
         if (mounted) {
           setState(() {
             _isLoading = false;
@@ -189,7 +189,7 @@ class _ProjectsPageState extends State<ProjectsPage> {
         final response = await HttpService().post(url, body: result);
 
         // Handle authentication errors
-        if (HttpService().handleAuthError(response)) {
+        if (await HttpService().handleAuthError(response)) {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
@@ -247,7 +247,7 @@ class _ProjectsPageState extends State<ProjectsPage> {
         final response = await HttpService().put(url, body: result);
 
         // Handle authentication errors
-        if (HttpService().handleAuthError(response)) {
+        if (await HttpService().handleAuthError(response)) {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
@@ -320,7 +320,7 @@ class _ProjectsPageState extends State<ProjectsPage> {
             await HttpService().delete(url, body: {'id': project.id});
 
         // Handle authentication errors
-        if (HttpService().handleAuthError(response)) {
+        if (await HttpService().handleAuthError(response)) {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(

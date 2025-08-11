@@ -473,7 +473,7 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
     );
 
     // Handle authentication errors
-    if (HttpService().handleAuthError(response)) {
+    if (await HttpService().handleAuthError(response)) {
       throw Exception('Authentication required. Please log in again.');
     }
 
@@ -501,7 +501,7 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
     );
 
     // Handle authentication errors
-    if (HttpService().handleAuthError(response)) {
+    if (await HttpService().handleAuthError(response)) {
       throw Exception('Authentication required. Please log in again.');
     }
 
@@ -529,7 +529,7 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
     );
 
     // Handle authentication errors
-    if (HttpService().handleAuthError(response)) {
+    if (await HttpService().handleAuthError(response)) {
       throw Exception('Authentication required. Please log in again.');
     }
 
@@ -639,7 +639,7 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
         );
 
         // Handle authentication errors
-        if (HttpService().handleAuthError(response)) {
+        if (await HttpService().handleAuthError(response)) {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
@@ -699,7 +699,7 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
         );
 
         // Handle authentication errors
-        if (HttpService().handleAuthError(response)) {
+        if (await HttpService().handleAuthError(response)) {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
@@ -769,7 +769,7 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
       );
 
       // Handle authentication errors
-      if (HttpService().handleAuthError(response)) {
+      if (await HttpService().handleAuthError(response)) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -892,7 +892,7 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
         );
 
         // Handle authentication errors
-        if (HttpService().handleAuthError(response)) {
+        if (await HttpService().handleAuthError(response)) {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(

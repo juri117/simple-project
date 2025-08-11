@@ -3,6 +3,7 @@
         "AUTOINCREMENT",
         "cupertino",
         "ERRMODE",
+        "prefs",
         "Schyler"
     ]
 }

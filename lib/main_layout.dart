@@ -414,7 +414,7 @@ class _MainLayoutState extends State<MainLayout> {
       );
 
       // Clear user session regardless of response
-      UserSession.instance.clearUser();
+      await UserSession.instance.clearUser();
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -428,7 +428,7 @@ class _MainLayoutState extends State<MainLayout> {
       }
     } catch (e) {
       // Clear user session even if logout request fails
-      UserSession.instance.clearUser();
+      await UserSession.instance.clearUser();
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -580,7 +580,7 @@ class _SimpleChangePasswordDialogState
           Config.instance.buildApiUrl('change_password.php'),
           body: requestData);
 
-      if (HttpService().handleAuthError(response)) {
+      if (await HttpService().handleAuthError(response)) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(

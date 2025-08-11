@@ -52,10 +52,10 @@ class HttpService {
   }
 
   // Helper method to handle authentication errors
-  bool handleAuthError(http.Response response) {
+  Future<bool> handleAuthError(http.Response response) async {
     if (response.statusCode == 401) {
       // Clear user session on authentication error
-      UserSession.instance.clearUser();
+      await UserSession.instance.clearUser();
       return true; // Indicates auth error was handled
     }
     return false; // No auth error

@@ -18,6 +18,20 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isLoading = false;
   bool _obscurePassword = true;
 
+  @override
+  void initState() {
+    super.initState();
+    // Initialize session and check if user is already logged in
+    _initializeSession();
+  }
+
+  Future<void> _initializeSession() async {
+    await UserSession.instance.initialize();
+    if (mounted && UserSession.instance.isLoggedIn) {
+      context.go('/projects');
+    }
+  }
+
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) {
       return;
@@ -45,7 +59,8 @@ class _LoginScreenState extends State<LoginScreen> {
         // Login successful - store user session
         final user = data['user'];
         final sessionToken = data['session_token'];
-        UserSession.instance.setUser(user['id'], user['username'], sessionToken,
+        await UserSession.instance.setUser(
+            user['id'], user['username'], sessionToken,
             role: user['role']);
 
         if (mounted) {
@@ -57,9 +72,6 @@ class _LoginScreenState extends State<LoginScreen> {
               backgroundColor: Colors.green,
             ),
           );
-
-          // Add a small delay to ensure session is properly stored
-          await Future.delayed(const Duration(milliseconds: 100));
 
           // Navigate to main layout
           if (mounted) {

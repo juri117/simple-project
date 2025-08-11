@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class UserSession {
   static UserSession? _instance;
@@ -15,31 +16,82 @@ class UserSession {
   String? _username;
   String? _sessionToken;
   String? _userRole;
+  bool _isInitialized = false;
 
-  void setUser(int userId, String username, String sessionToken,
-      {String? role}) {
+  // Initialize session from persistent storage
+  Future<void> initialize() async {
+    if (_isInitialized) return;
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final userId = prefs.getInt('user_id');
+      final username = prefs.getString('username');
+      final sessionToken = prefs.getString('session_token');
+      final userRole = prefs.getString('user_role');
+
+      if (userId != null && username != null && sessionToken != null) {
+        _userId = userId;
+        _username = username;
+        _sessionToken = sessionToken;
+        _userRole = userRole ?? 'normal';
+      }
+    } catch (e) {
+      print('Error loading user session: $e');
+    }
+
+    _isInitialized = true;
+  }
+
+  Future<void> setUser(int userId, String username, String sessionToken,
+      {String? role}) async {
     _userId = userId;
     _username = username;
     _sessionToken = sessionToken;
     _userRole = role ?? 'normal';
+
+    // Save to persistent storage
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt('user_id', userId);
+      await prefs.setString('username', username);
+      await prefs.setString('session_token', sessionToken);
+      await prefs.setString('user_role', _userRole!);
+    } catch (e) {
+      print('Error saving user session: $e');
+    }
   }
 
-  void clearUser() {
+  Future<void> clearUser() async {
     _userId = null;
     _username = null;
     _sessionToken = null;
     _userRole = null;
+
+    // Clear from persistent storage
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('user_id');
+      await prefs.remove('username');
+      await prefs.remove('session_token');
+      await prefs.remove('user_role');
+    } catch (e) {
+      print('Error clearing user session: $e');
+    }
   }
 
   int? get userId => _userId;
   String? get username => _username;
   String? get sessionToken => _sessionToken;
   String? get userRole => _userRole;
+
   bool get isLoggedIn {
     final loggedIn =
         _userId != null && _username != null && _sessionToken != null;
     return loggedIn;
   }
+
+  // Check if session is initialized
+  bool get isInitialized => _isInitialized;
 }
 
 class Config {
