@@ -30,6 +30,19 @@ try {
             $stmt->execute();
             $projects = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
+            // Get tags for each project
+            foreach ($projects as &$project) {
+                $stmt = $pdo->prepare("
+                    SELECT t.id, t.short_name, t.description, t.color
+                    FROM tags t
+                    INNER JOIN project_tags pt ON t.id = pt.tag_id
+                    WHERE pt.project_id = ? AND t.disabled = 0
+                    ORDER BY t.short_name ASC
+                ");
+                $stmt->execute([$project['id']]);
+                $project['tags'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            }
+            
             echo json_encode([
                 'success' => true,
                 'projects' => $projects
@@ -61,10 +74,40 @@ try {
             
             $projectId = $pdo->lastInsertId();
             
-            // Get the created project
+            // Handle tag assignment if provided
+            if (isset($input['tag_ids']) && is_array($input['tag_ids'])) {
+                $tagIds = $input['tag_ids'];
+                
+                // Verify all tags exist and are not disabled
+                if (!empty($tagIds)) {
+                    $placeholders = str_repeat('?,', count($tagIds) - 1) . '?';
+                    $stmt = $pdo->prepare("SELECT id FROM tags WHERE id IN ($placeholders) AND disabled = 0");
+                    $stmt->execute($tagIds);
+                    $validTagIds = $stmt->fetchAll(PDO::FETCH_COLUMN);
+                    
+                    // Add tags to project
+                    $stmt = $pdo->prepare("INSERT INTO project_tags (project_id, tag_id) VALUES (?, ?)");
+                    foreach ($validTagIds as $tagId) {
+                        $stmt->execute([$projectId, $tagId]);
+                    }
+                }
+            }
+            
+            // Get the created project with tags
             $stmt = $pdo->prepare("SELECT id, name, description, status, created_at, updated_at FROM projects WHERE id = ?");
             $stmt->execute([$projectId]);
             $project = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            // Get tags for the project
+            $stmt = $pdo->prepare("
+                SELECT t.id, t.short_name, t.description, t.color
+                FROM tags t
+                INNER JOIN project_tags pt ON t.id = pt.tag_id
+                WHERE pt.project_id = ? AND t.disabled = 0
+                ORDER BY t.short_name ASC
+            ");
+            $stmt->execute([$projectId]);
+            $project['tags'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
             echo json_encode([
                 'success' => true,
@@ -103,10 +146,44 @@ try {
                 exit();
             }
             
-            // Get the updated project
+            // Handle tag assignment if provided
+            if (isset($input['tag_ids']) && is_array($input['tag_ids'])) {
+                $tagIds = $input['tag_ids'];
+                
+                // Remove existing tags for this project
+                $stmt = $pdo->prepare("DELETE FROM project_tags WHERE project_id = ?");
+                $stmt->execute([$id]);
+                
+                // Add new tags if provided
+                if (!empty($tagIds)) {
+                    $placeholders = str_repeat('?,', count($tagIds) - 1) . '?';
+                    $stmt = $pdo->prepare("SELECT id FROM tags WHERE id IN ($placeholders) AND disabled = 0");
+                    $stmt->execute($tagIds);
+                    $validTagIds = $stmt->fetchAll(PDO::FETCH_COLUMN);
+                    
+                    // Add tags to project
+                    $stmt = $pdo->prepare("INSERT INTO project_tags (project_id, tag_id) VALUES (?, ?)");
+                    foreach ($validTagIds as $tagId) {
+                        $stmt->execute([$id, $tagId]);
+                    }
+                }
+            }
+            
+            // Get the updated project with tags
             $stmt = $pdo->prepare("SELECT id, name, description, status, created_at, updated_at FROM projects WHERE id = ?");
             $stmt->execute([$id]);
             $project = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            // Get tags for the project
+            $stmt = $pdo->prepare("
+                SELECT t.id, t.short_name, t.description, t.color
+                FROM tags t
+                INNER JOIN project_tags pt ON t.id = pt.tag_id
+                WHERE pt.project_id = ? AND t.disabled = 0
+                ORDER BY t.short_name ASC
+            ");
+            $stmt->execute([$id]);
+            $project['tags'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
             echo json_encode([
                 'success' => true,

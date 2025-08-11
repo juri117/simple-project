@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'config.dart';
 import 'time_tracking_service.dart';
 import 'http_service.dart';
+import 'tag.dart';
 
 class Project {
   final int id;
@@ -12,6 +13,7 @@ class Project {
   final String createdAt;
   final String updatedAt;
   final int totalTimeSeconds; // Total time spent on all issues in this project
+  final List<Tag> tags; // Tags assigned to this project
 
   Project({
     required this.id,
@@ -21,17 +23,31 @@ class Project {
     required this.createdAt,
     required this.updatedAt,
     this.totalTimeSeconds = 0,
+    this.tags = const [],
   });
 
   factory Project.fromJson(Map<String, dynamic> json) {
+    List<Tag> tags = [];
+    if (json['tags'] != null && json['tags'] is List) {
+      try {
+        tags = (json['tags'] as List)
+            .map((tagJson) => Tag.fromJson(tagJson))
+            .toList();
+      } catch (e) {
+        print('Error parsing tags for project ${json['id']}: $e');
+        tags = [];
+      }
+    }
+
     return Project(
-      id: json['id'],
-      name: json['name'],
+      id: json['id'] ?? 0,
+      name: json['name'] ?? '',
       description: json['description'] ?? '',
-      status: json['status'],
-      createdAt: json['created_at'],
-      updatedAt: json['updated_at'],
+      status: json['status'] ?? 'active',
+      createdAt: json['created_at'] ?? '',
+      updatedAt: json['updated_at'] ?? '',
       totalTimeSeconds: json['total_time_seconds'] ?? 0,
+      tags: tags,
     );
   }
 }
@@ -93,9 +109,18 @@ class _ProjectsPageState extends State<ProjectsPage> {
         if (data['success'] == true) {
           if (mounted) {
             setState(() {
-              _projects = (data['projects'] as List)
-                  .map((project) => Project.fromJson(project))
-                  .toList();
+              try {
+                _projects = (data['projects'] as List).map((project) {
+                  print('Parsing project: ${project['name']}');
+                  return Project.fromJson(project);
+                }).toList();
+              } catch (e) {
+                print('Error parsing projects: $e');
+                setState(() {
+                  _isError = true;
+                  _errorMessage = 'Error parsing project data: $e';
+                });
+              }
             });
           }
 
@@ -176,8 +201,16 @@ class _ProjectsPageState extends State<ProjectsPage> {
     }
   }
 
+  Color _parseColor(String colorString) {
+    try {
+      return Color(int.parse(colorString.replaceFirst('#', '0xFF')));
+    } catch (e) {
+      return Colors.blue;
+    }
+  }
+
   Future<void> _createProject() async {
-    final result = await showDialog<Map<String, String>>(
+    final result = await showDialog<Map<String, dynamic>>(
       context: context,
       builder: (context) => const ProjectDialog(),
     );
@@ -515,6 +548,42 @@ class _ProjectsPageState extends State<ProjectsPage> {
                                                 .bodyMedium,
                                           ),
                                         ],
+                                        if (project.tags.isNotEmpty) ...[
+                                          const SizedBox(height: 8),
+                                          Wrap(
+                                            spacing: 4,
+                                            runSpacing: 4,
+                                            children: project.tags.map((tag) {
+                                              return Container(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                  horizontal: 6,
+                                                  vertical: 2,
+                                                ),
+                                                decoration: BoxDecoration(
+                                                  color: _parseColor(tag.color)
+                                                      .withOpacity(0.2),
+                                                  borderRadius:
+                                                      BorderRadius.circular(8),
+                                                  border: Border.all(
+                                                    color:
+                                                        _parseColor(tag.color),
+                                                    width: 1,
+                                                  ),
+                                                ),
+                                                child: Text(
+                                                  tag.shortName,
+                                                  style: TextStyle(
+                                                    color:
+                                                        _parseColor(tag.color),
+                                                    fontSize: 10,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                ),
+                                              );
+                                            }).toList(),
+                                          ),
+                                        ],
                                         const SizedBox(height: 8),
                                         Row(
                                           children: [
@@ -624,6 +693,9 @@ class _ProjectDialogState extends State<ProjectDialog> {
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
   String _status = 'active';
+  List<Tag> _allTags = [];
+  List<int> _selectedTagIds = [];
+  bool _isLoadingTags = true;
 
   @override
   void initState() {
@@ -632,6 +704,37 @@ class _ProjectDialogState extends State<ProjectDialog> {
       _nameController.text = widget.project!.name;
       _descriptionController.text = widget.project!.description;
       _status = widget.project!.status;
+      _selectedTagIds = widget.project!.tags.map((tag) => tag.id).toList();
+    }
+    _loadTags();
+  }
+
+  Future<void> _loadTags() async {
+    try {
+      final response =
+          await HttpService().get(Config.instance.buildApiUrl('tags.php'));
+      final data = json.decode(response.body);
+
+      if (data['success']) {
+        setState(() {
+          _allTags = (data['tags'] as List)
+              .map((tagJson) => Tag.fromJson(tagJson))
+              .toList();
+          _isLoadingTags = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _isLoadingTags = false;
+      });
+    }
+  }
+
+  Color _parseColor(String colorString) {
+    try {
+      return Color(int.parse(colorString.replaceFirst('#', '0xFF')));
+    } catch (e) {
+      return Colors.blue;
     }
   }
 
@@ -646,52 +749,104 @@ class _ProjectDialogState extends State<ProjectDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       title: Text(widget.project == null ? 'Create Project' : 'Edit Project'),
-      content: Form(
-        key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextFormField(
-              controller: _nameController,
-              decoration: const InputDecoration(
-                labelText: 'Project Name',
-                border: OutlineInputBorder(),
+      content: SingleChildScrollView(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                controller: _nameController,
+                decoration: const InputDecoration(
+                  labelText: 'Project Name',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Please enter a project name';
+                  }
+                  return null;
+                },
               ),
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Please enter a project name';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _descriptionController,
-              decoration: const InputDecoration(
-                labelText: 'Description (optional)',
-                border: OutlineInputBorder(),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _descriptionController,
+                decoration: const InputDecoration(
+                  labelText: 'Description (optional)',
+                  border: OutlineInputBorder(),
+                ),
+                maxLines: 3,
               ),
-              maxLines: 3,
-            ),
-            const SizedBox(height: 16),
-            DropdownButtonFormField<String>(
-              value: _status,
-              decoration: const InputDecoration(
-                labelText: 'Status',
-                border: OutlineInputBorder(),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                value: _status,
+                decoration: const InputDecoration(
+                  labelText: 'Status',
+                  border: OutlineInputBorder(),
+                ),
+                items: const [
+                  DropdownMenuItem(value: 'active', child: Text('Active')),
+                  DropdownMenuItem(
+                      value: 'completed', child: Text('Completed')),
+                  DropdownMenuItem(value: 'on-hold', child: Text('On Hold')),
+                ],
+                onChanged: (value) {
+                  setState(() {
+                    _status = value!;
+                  });
+                },
               ),
-              items: const [
-                DropdownMenuItem(value: 'active', child: Text('Active')),
-                DropdownMenuItem(value: 'completed', child: Text('Completed')),
-                DropdownMenuItem(value: 'on-hold', child: Text('On Hold')),
-              ],
-              onChanged: (value) {
-                setState(() {
-                  _status = value!;
-                });
-              },
-            ),
-          ],
+              const SizedBox(height: 16),
+              const Text(
+                'Tags',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              if (_isLoadingTags)
+                const Center(child: CircularProgressIndicator())
+              else
+                Container(
+                  constraints: const BoxConstraints(maxHeight: 200),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      children: _allTags.map((tag) {
+                        final isSelected = _selectedTagIds.contains(tag.id);
+
+                        return CheckboxListTile(
+                          title: Row(
+                            children: [
+                              Container(
+                                width: 16,
+                                height: 16,
+                                decoration: BoxDecoration(
+                                  color: _parseColor(tag.color),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(tag.shortName),
+                            ],
+                          ),
+                          subtitle: tag.description.isNotEmpty
+                              ? Text(tag.description)
+                              : null,
+                          value: isSelected,
+                          onChanged: (bool? value) {
+                            setState(() {
+                              if (value == true) {
+                                _selectedTagIds.add(tag.id);
+                              } else {
+                                _selectedTagIds.remove(tag.id);
+                              }
+                            });
+                          },
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
       actions: [
@@ -700,12 +855,13 @@ class _ProjectDialogState extends State<ProjectDialog> {
           child: const Text('Cancel'),
         ),
         ElevatedButton(
-          onPressed: () {
+          onPressed: () async {
             if (_formKey.currentState!.validate()) {
               final data = {
                 'name': _nameController.text.trim(),
                 'description': _descriptionController.text.trim(),
                 'status': _status,
+                'tag_ids': _selectedTagIds,
               };
 
               if (widget.project != null) {

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'projects_page.dart';
 import 'all_issues_page.dart';
 import 'user_management_page.dart';
+import 'tag_management_page.dart';
 import 'config.dart';
 import 'timer_widget.dart';
 import 'http_service.dart';
@@ -57,6 +58,8 @@ class _MainLayoutState extends State<MainLayout> {
         UserSession.instance.userRole == 'admin') {
       items.add(NavigationItem(
           icon: Icons.people, label: 'User Management', index: 4));
+      items.add(
+          NavigationItem(icon: Icons.label, label: 'Tag Management', index: 5));
     }
 
     return items;
@@ -96,6 +99,9 @@ class _MainLayoutState extends State<MainLayout> {
         UserSession.instance.userRole == 'admin') {
       pages.add(const UserManagementPage(
         key: ValueKey('user-management'),
+      ));
+      pages.add(const TagManagementPage(
+        key: ValueKey('tag-management'),
       ));
     }
 
@@ -161,6 +167,9 @@ class _MainLayoutState extends State<MainLayout> {
     } else if (index == 4) {
       // Navigate to User Management
       context.go('/user-management');
+    } else if (index == 5) {
+      // Navigate to Tag Management
+      context.go('/tag-management');
     }
   }
 

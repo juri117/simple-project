@@ -8,6 +8,7 @@ import 'config.dart';
 import 'time_tracking_service.dart';
 import 'http_service.dart';
 import 'file_attachment.dart';
+import 'tag.dart';
 
 class FilterOption<T> {
   final T value;
@@ -2507,6 +2508,8 @@ class _IssueDialogState extends State<IssueDialog> {
   bool _showDescriptionPreview = false;
   List<FileAttachment> _attachments = [];
   bool _isUploading = false;
+  List<Tag> _projectTags = [];
+  List<String> _selectedTags = [];
 
   @override
   void initState() {
@@ -2529,6 +2532,7 @@ class _IssueDialogState extends State<IssueDialog> {
       // For new issues, select the first project by default
       if (widget.projects.isNotEmpty) {
         _selectedProjectId = widget.projects.first.id;
+        _loadProjectTags(widget.projects.first.id);
       }
 
       // Set the logged-in user as the default assignee for new issues
@@ -2536,6 +2540,48 @@ class _IssueDialogState extends State<IssueDialog> {
           UserSession.instance.userId != null) {
         _assigneeId = UserSession.instance.userId;
       }
+    }
+  }
+
+  Future<void> _loadProjectTags(int projectId) async {
+    try {
+      final response = await HttpService().get(
+          '${Config.instance.buildApiUrl('project_tags.php')}?project_id=$projectId');
+      final data = json.decode(response.body);
+
+      if (data['success']) {
+        setState(() {
+          _projectTags = (data['tags'] as List)
+              .map((tagJson) => Tag.fromJson(tagJson))
+              .toList();
+        });
+      }
+    } catch (e) {
+      // Silently handle errors
+    }
+  }
+
+  void _addTag(String tagName) {
+    if (!_selectedTags.contains(tagName)) {
+      setState(() {
+        _selectedTags.add(tagName);
+        _tagsController.text = _selectedTags.join(', ');
+      });
+    }
+  }
+
+  void _removeTag(String tagName) {
+    setState(() {
+      _selectedTags.remove(tagName);
+      _tagsController.text = _selectedTags.join(', ');
+    });
+  }
+
+  Color _parseColor(String colorString) {
+    try {
+      return Color(int.parse(colorString.replaceFirst('#', '0xFF')));
+    } catch (e) {
+      return Colors.blue;
     }
   }
 
@@ -2657,6 +2703,9 @@ class _IssueDialogState extends State<IssueDialog> {
                   setState(() {
                     _selectedProjectId = value;
                   });
+                  if (value != null) {
+                    _loadProjectTags(value);
+                  }
                 },
                 validator: (value) {
                   if (value == null) {
@@ -2733,6 +2782,54 @@ class _IssueDialogState extends State<IssueDialog> {
                   hintText: 'bug, frontend, urgent',
                 ),
               ),
+              if (_projectTags.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                const Text(
+                  'Project Tags:',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                ),
+                const SizedBox(height: 4),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 4,
+                  children: _projectTags.map((tag) {
+                    final isSelected = _selectedTags.contains(tag.shortName);
+                    return GestureDetector(
+                      onTap: () {
+                        if (isSelected) {
+                          _removeTag(tag.shortName);
+                        } else {
+                          _addTag(tag.shortName);
+                        }
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? _parseColor(tag.color)
+                              : _parseColor(tag.color).withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: _parseColor(tag.color),
+                            width: 1,
+                          ),
+                        ),
+                        child: Text(
+                          tag.shortName,
+                          style: TextStyle(
+                            color: isSelected
+                                ? Colors.white
+                                : _parseColor(tag.color),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ],
               const SizedBox(height: 16),
               Row(
                 children: [

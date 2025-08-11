@@ -67,7 +67,13 @@ final GoRouter _router = GoRouter(
     GoRoute(
       path: '/user-management',
       pageBuilder: (context, state) => const NoTransitionPage(
-        child: MainLayout(initialIndex: 3),
+        child: MainLayout(initialIndex: 4),
+      ),
+    ),
+    GoRoute(
+      path: '/tag-management',
+      pageBuilder: (context, state) => const NoTransitionPage(
+        child: MainLayout(initialIndex: 5),
       ),
     ),
     // Redirect root to login
