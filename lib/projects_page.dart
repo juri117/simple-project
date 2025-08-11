@@ -367,225 +367,245 @@ class _ProjectsPageState extends State<ProjectsPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Projects'),
-        backgroundColor: const Color(0xFF008080),
-        foregroundColor: Colors.white,
-        leading: MediaQuery.of(context).size.width < 768
-            ? IconButton(
-                icon: const Icon(Icons.menu),
-                onPressed: () {
-                  Scaffold.of(context).openDrawer();
-                },
-              )
-            : null,
-        actions: [
-          IconButton(icon: const Icon(Icons.refresh), onPressed: _loadProjects),
-        ],
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _isError
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.error_outline,
-                          size: 64, color: Colors.red),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Error loading projects',
-                        style: Theme.of(context).textTheme.headlineSmall,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        _errorMessage,
-                        style: Theme.of(context).textTheme.bodyMedium,
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: _loadProjects,
-                        child: const Text('Retry'),
-                      ),
-                    ],
-                  ),
-                )
-              : _projects.isEmpty
+    return Column(
+      children: [
+        // Header section that mimics AppBar functionality
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            border: Border(bottom: BorderSide(color: Color(0xFFE0E0E0))),
+          ),
+          child: Row(
+            children: [
+              const Text(
+                'Projects',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const Spacer(),
+              IconButton(
+                icon: const Icon(Icons.add),
+                onPressed: _createProject,
+                tooltip: 'Create New Project',
+              ),
+              IconButton(
+                icon: const Icon(Icons.refresh),
+                onPressed: _loadProjects,
+                tooltip: 'Refresh',
+              ),
+            ],
+          ),
+        ),
+        // Body content
+        Expanded(
+          child: _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : _isError
                   ? Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(Icons.folder_open,
-                              size: 64, color: Colors.grey),
+                          const Icon(Icons.error_outline,
+                              size: 64, color: Colors.red),
                           const SizedBox(height: 16),
                           Text(
-                            'No projects yet',
+                            'Error loading projects',
                             style: Theme.of(context).textTheme.headlineSmall,
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            'Create your first project to get started',
+                            _errorMessage,
                             style: Theme.of(context).textTheme.bodyMedium,
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: _loadProjects,
+                            child: const Text('Retry'),
                           ),
                         ],
                       ),
                     )
-                  : RefreshIndicator(
-                      onRefresh: _loadProjects,
-                      child: ListView.builder(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: _projects.length,
-                        itemBuilder: (context, index) {
-                          final project = _projects[index];
-                          return Card(
-                            margin: const EdgeInsets.only(bottom: 16),
-                            child: InkWell(
-                              onTap: () {
-                                if (widget.onProjectTap != null) {
-                                  widget.onProjectTap!(project.id);
-                                }
-                              },
-                              child: ListTile(
-                                contentPadding: const EdgeInsets.all(16),
-                                title: Row(
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        project.name,
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 18,
-                                        ),
-                                      ),
-                                    ),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 8,
-                                        vertical: 4,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: project.status == 'active'
-                                            ? Colors.green
-                                            : Colors.orange,
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: Text(
-                                        project.status.toUpperCase(),
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                subtitle: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    if (project.description.isNotEmpty) ...[
-                                      const SizedBox(height: 8),
-                                      Text(
-                                        project.description,
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodyMedium,
-                                      ),
-                                    ],
-                                    const SizedBox(height: 8),
-                                    Row(
+                  : _projects.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.folder_open,
+                                  size: 64, color: Colors.grey),
+                              const SizedBox(height: 16),
+                              Text(
+                                'No projects yet',
+                                style:
+                                    Theme.of(context).textTheme.headlineSmall,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Create your first project to get started',
+                                style: Theme.of(context).textTheme.bodyMedium,
+                              ),
+                            ],
+                          ),
+                        )
+                      : RefreshIndicator(
+                          onRefresh: _loadProjects,
+                          child: ListView.builder(
+                            padding: const EdgeInsets.all(16),
+                            itemCount: _projects.length,
+                            itemBuilder: (context, index) {
+                              final project = _projects[index];
+                              return Card(
+                                margin: const EdgeInsets.only(bottom: 16),
+                                child: InkWell(
+                                  onTap: () {
+                                    if (widget.onProjectTap != null) {
+                                      widget.onProjectTap!(project.id);
+                                    }
+                                  },
+                                  child: ListTile(
+                                    contentPadding: const EdgeInsets.all(16),
+                                    title: Row(
                                       children: [
-                                        Text(
-                                          'Created: ${project.createdAt}',
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .bodySmall
-                                              ?.copyWith(
-                                                  color: Colors.grey[600]),
+                                        Expanded(
+                                          child: Text(
+                                            project.name,
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 18,
+                                            ),
+                                          ),
                                         ),
-                                        if (project.totalTimeSeconds > 0) ...[
-                                          const SizedBox(width: 16),
-                                          Icon(
-                                            Icons.timer,
-                                            size: 12,
-                                            color: Colors.grey[600],
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 4,
                                           ),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            TimeTrackingService.instance
-                                                .formatDurationHuman(
-                                                    project.totalTimeSeconds),
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .bodySmall
-                                                ?.copyWith(
-                                                  color: Colors.grey[600],
-                                                  fontWeight: FontWeight.w500,
-                                                ),
+                                          decoration: BoxDecoration(
+                                            color: project.status == 'active'
+                                                ? Colors.green
+                                                : Colors.orange,
+                                            borderRadius:
+                                                BorderRadius.circular(12),
                                           ),
-                                        ],
-                                        const Spacer(),
-                                        Icon(
-                                          Icons.arrow_forward_ios,
-                                          size: 16,
-                                          color: Colors.grey[600],
+                                          child: Text(
+                                            project.status.toUpperCase(),
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
                                         ),
                                       ],
                                     ),
-                                  ],
-                                ),
-                                trailing: PopupMenuButton<String>(
-                                  onSelected: (value) {
-                                    switch (value) {
-                                      case 'edit':
-                                        _editProject(project);
-                                        break;
-                                      case 'delete':
-                                        _deleteProject(project);
-                                        break;
-                                    }
-                                  },
-                                  itemBuilder: (context) => [
-                                    const PopupMenuItem(
-                                      value: 'edit',
-                                      child: Row(
-                                        children: [
-                                          Icon(Icons.edit),
-                                          SizedBox(width: 8),
-                                          Text('Edit'),
-                                        ],
-                                      ),
-                                    ),
-                                    const PopupMenuItem(
-                                      value: 'delete',
-                                      child: Row(
-                                        children: [
-                                          Icon(Icons.delete, color: Colors.red),
-                                          SizedBox(width: 8),
+                                    subtitle: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        if (project.description.isNotEmpty) ...[
+                                          const SizedBox(height: 8),
                                           Text(
-                                            'Delete',
-                                            style: TextStyle(color: Colors.red),
+                                            project.description,
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodyMedium,
                                           ),
                                         ],
-                                      ),
+                                        const SizedBox(height: 8),
+                                        Row(
+                                          children: [
+                                            Text(
+                                              'Created: ${project.createdAt}',
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .bodySmall
+                                                  ?.copyWith(
+                                                      color: Colors.grey[600]),
+                                            ),
+                                            if (project.totalTimeSeconds >
+                                                0) ...[
+                                              const SizedBox(width: 16),
+                                              Icon(
+                                                Icons.timer,
+                                                size: 12,
+                                                color: Colors.grey[600],
+                                              ),
+                                              const SizedBox(width: 4),
+                                              Text(
+                                                TimeTrackingService.instance
+                                                    .formatDurationHuman(project
+                                                        .totalTimeSeconds),
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .bodySmall
+                                                    ?.copyWith(
+                                                      color: Colors.grey[600],
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                    ),
+                                              ),
+                                            ],
+                                            const Spacer(),
+                                            Icon(
+                                              Icons.arrow_forward_ios,
+                                              size: 16,
+                                              color: Colors.grey[600],
+                                            ),
+                                          ],
+                                        ),
+                                      ],
                                     ),
-                                  ],
+                                    trailing: PopupMenuButton<String>(
+                                      onSelected: (value) {
+                                        switch (value) {
+                                          case 'edit':
+                                            _editProject(project);
+                                            break;
+                                          case 'delete':
+                                            _deleteProject(project);
+                                            break;
+                                        }
+                                      },
+                                      itemBuilder: (context) => [
+                                        const PopupMenuItem(
+                                          value: 'edit',
+                                          child: Row(
+                                            children: [
+                                              Icon(Icons.edit),
+                                              SizedBox(width: 8),
+                                              Text('Edit'),
+                                            ],
+                                          ),
+                                        ),
+                                        const PopupMenuItem(
+                                          value: 'delete',
+                                          child: Row(
+                                            children: [
+                                              Icon(Icons.delete,
+                                                  color: Colors.red),
+                                              SizedBox(width: 8),
+                                              Text(
+                                                'Delete',
+                                                style: TextStyle(
+                                                    color: Colors.red),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
                                 ),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _createProject,
-        backgroundColor: const Color(0xFF008080),
-        foregroundColor: Colors.white,
-        heroTag: 'projects_fab',
-        child: const Icon(Icons.add),
-      ),
+                              );
+                            },
+                          ),
+                        ),
+        ),
+      ],
     );
   }
 }

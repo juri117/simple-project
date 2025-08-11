@@ -85,24 +85,43 @@ class _UserManagementPageState extends State<UserManagementPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('User Management'),
-        actions: [
-          if (_isAdmin)
-            IconButton(
-              icon: const Icon(Icons.add),
-              onPressed: _showCreateUserDialog,
-              tooltip: 'Create New User',
-            ),
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadUsers,
-            tooltip: 'Refresh',
+    return Column(
+      children: [
+        // Header section that mimics AppBar functionality
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            border: Border(bottom: BorderSide(color: Color(0xFFE0E0E0))),
           ),
-        ],
-      ),
-      body: _buildBody(),
+          child: Row(
+            children: [
+              const Text(
+                'User Management',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const Spacer(),
+              if (_isAdmin)
+                IconButton(
+                  icon: const Icon(Icons.add),
+                  onPressed: _showCreateUserDialog,
+                  tooltip: 'Create New User',
+                ),
+              IconButton(
+                icon: const Icon(Icons.refresh),
+                onPressed: _loadUsers,
+                tooltip: 'Refresh',
+              ),
+            ],
+          ),
+        ),
+        // Body content
+        Expanded(child: _buildBody()),
+      ],
     );
   }
 

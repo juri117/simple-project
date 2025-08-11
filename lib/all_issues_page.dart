@@ -1699,6 +1699,143 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
     );
   }
 
+  Widget _buildIssuesListView() {
+    final filteredIssues = _getFilteredIssues();
+
+    return RefreshIndicator(
+      onRefresh: _loadData,
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: filteredIssues.length,
+        itemBuilder: (context, index) {
+          final issue = filteredIssues[index];
+          return _buildIssueCard(issue);
+        },
+      ),
+    );
+  }
+
+  Widget _buildIssueCard(Issue issue) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16),
+      child: ListTile(
+        contentPadding: const EdgeInsets.all(16),
+        title: Row(
+          children: [
+            Expanded(
+              child: Text(
+                issue.title,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: _getStatusColor(issue.status),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                issue.status.replaceAll('_', ' ').toUpperCase(),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (issue.description.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(
+                issue.description,
+                style: Theme.of(context).textTheme.bodyMedium,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Icon(Icons.folder, size: 16, color: Colors.grey[600]),
+                const SizedBox(width: 4),
+                Text(
+                  issue.projectName,
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Icon(Icons.person, size: 16, color: Colors.grey[600]),
+                const SizedBox(width: 4),
+                Text(
+                  (issue.assigneeName ?? '').isNotEmpty
+                      ? issue.assigneeName!
+                      : 'Unassigned',
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const Spacer(),
+                Icon(Icons.schedule, size: 16, color: Colors.grey[600]),
+                const SizedBox(width: 4),
+                Text(
+                  issue.createdAt,
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+        trailing: PopupMenuButton<String>(
+          onSelected: (value) {
+            switch (value) {
+              case 'edit':
+                _editIssue(issue);
+                break;
+              case 'delete':
+                _deleteIssue(issue);
+                break;
+            }
+          },
+          itemBuilder: (context) => [
+            const PopupMenuItem(
+              value: 'edit',
+              child: Row(
+                children: [
+                  Icon(Icons.edit),
+                  SizedBox(width: 8),
+                  Text('Edit'),
+                ],
+              ),
+            ),
+            const PopupMenuItem(
+              value: 'delete',
+              child: Row(
+                children: [
+                  Icon(Icons.delete, color: Colors.red),
+                  SizedBox(width: 8),
+                  Text('Delete', style: TextStyle(color: Colors.red)),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildKanbanCard(Issue issue) {
     return Draggable<Issue>(
       data: issue,
@@ -2070,529 +2207,137 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          _selectedProjects.isNotEmpty && _selectedProjects.length == 1
-              ? _getProjectName(_selectedProjects.first)
-              : 'All Issues',
-        ),
-        backgroundColor: const Color(0xFF008080),
-        foregroundColor: Colors.white,
-        leading: MediaQuery.of(context).size.width < 768
-            ? IconButton(
-                icon: const Icon(Icons.menu),
-                onPressed: () {
-                  Scaffold.of(context).openDrawer();
-                },
-              )
-            : null,
-        actions: [
-          // View toggle button
-          IconButton(
-            icon: Icon(_isKanbanView ? Icons.view_list : Icons.view_column),
-            onPressed: () {
-              setState(() {
-                _isKanbanView = !_isKanbanView;
-              });
-              _updateUrlFilters(); // Update URL when view mode changes
-            },
-            tooltip:
-                _isKanbanView ? 'Switch to List View' : 'Switch to Kanban View',
+    return Column(
+      children: [
+        // Header section that mimics AppBar functionality
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            border: Border(bottom: BorderSide(color: Color(0xFFE0E0E0))),
           ),
-          if (_hasActiveFilters())
-            IconButton(
-              icon: const Icon(Icons.share),
-              onPressed: _copyFilteredUrl,
-              tooltip: 'Copy filtered URL',
-            ),
-          IconButton(icon: const Icon(Icons.refresh), onPressed: _loadData),
-        ],
-      ),
-      body: Column(
-        children: [
-          // Compact filter panel (always visible)
-          _buildCompactFilterPanel(),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  _selectedProjects.isNotEmpty && _selectedProjects.length == 1
+                      ? _getProjectName(_selectedProjects.first)
+                      : 'All Issues',
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              // View toggle button
+              IconButton(
+                icon: Icon(_isKanbanView ? Icons.view_list : Icons.view_column),
+                onPressed: () {
+                  setState(() {
+                    _isKanbanView = !_isKanbanView;
+                  });
+                  _updateUrlFilters(); // Update URL when view mode changes
+                },
+                tooltip: _isKanbanView
+                    ? 'Switch to List View'
+                    : 'Switch to Kanban View',
+              ),
+              if (_hasActiveFilters())
+                IconButton(
+                  icon: const Icon(Icons.share),
+                  onPressed: _copyFilteredUrl,
+                  tooltip: 'Copy filtered URL',
+                ),
+              IconButton(
+                icon: const Icon(Icons.add),
+                onPressed: _createIssue,
+                tooltip: 'Create New Issue',
+              ),
+              IconButton(
+                icon: const Icon(Icons.refresh),
+                onPressed: _loadData,
+                tooltip: 'Refresh',
+              ),
+            ],
+          ),
+        ),
+        // Body content
+        Expanded(
+          child: Column(
+            children: [
+              // Compact filter panel (always visible)
+              _buildCompactFilterPanel(),
 
-          // Main content
-          Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _isError
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(
-                              Icons.error_outline,
-                              size: 64,
-                              color: Colors.red,
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'Error loading issues',
-                              style: Theme.of(context).textTheme.headlineSmall,
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              _errorMessage,
-                              style: Theme.of(context).textTheme.bodyMedium,
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 16),
-                            ElevatedButton(
-                              onPressed: _loadData,
-                              child: const Text('Retry'),
-                            ),
-                          ],
-                        ),
-                      )
-                    : _issues.isEmpty
+              // Main content
+              Expanded(
+                child: _isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : _isError
                         ? Center(
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 const Icon(
-                                  Icons.bug_report,
+                                  Icons.error_outline,
                                   size: 64,
-                                  color: Colors.grey,
+                                  color: Colors.red,
                                 ),
                                 const SizedBox(height: 16),
                                 Text(
-                                  'No issues found',
+                                  'Error loading issues',
                                   style:
                                       Theme.of(context).textTheme.headlineSmall,
                                 ),
                                 const SizedBox(height: 8),
                                 Text(
-                                  'Create your first issue to get started',
+                                  _errorMessage,
                                   style: Theme.of(context).textTheme.bodyMedium,
+                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: 16),
+                                ElevatedButton(
+                                  onPressed: _loadData,
+                                  child: const Text('Retry'),
                                 ),
                               ],
                             ),
                           )
-                        : _getFilteredIssues().isEmpty
+                        : _issues.isEmpty
                             ? Center(
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     const Icon(
-                                      Icons.filter_list,
+                                      Icons.bug_report,
                                       size: 64,
                                       color: Colors.grey,
                                     ),
                                     const SizedBox(height: 16),
                                     Text(
-                                      'No issues match your filters',
+                                      'No issues found',
                                       style: Theme.of(context)
                                           .textTheme
                                           .headlineSmall,
                                     ),
                                     const SizedBox(height: 8),
                                     Text(
-                                      'Try adjusting your filter criteria',
+                                      'Create your first issue to get started',
                                       style: Theme.of(context)
                                           .textTheme
                                           .bodyMedium,
-                                    ),
-                                    const SizedBox(height: 16),
-                                    ElevatedButton(
-                                      onPressed: _clearAllFilters,
-                                      child: const Text('Clear All Filters'),
                                     ),
                                   ],
                                 ),
                               )
                             : _isKanbanView
                                 ? _buildKanbanBoard()
-                                : RefreshIndicator(
-                                    onRefresh: _loadAllIssues,
-                                    child: ListView.builder(
-                                      padding: const EdgeInsets.all(16),
-                                      itemCount: _getFilteredIssues().length,
-                                      itemBuilder: (context, index) {
-                                        final issue =
-                                            _getFilteredIssues()[index];
-                                        return Card(
-                                            margin: const EdgeInsets.only(
-                                                bottom: 16),
-                                            child: Padding(
-                                              padding: const EdgeInsets.all(16),
-                                              child: Row(
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment.start,
-                                                  children: [
-                                                    // Priority badge on the left
-                                                    Container(
-                                                      padding: const EdgeInsets
-                                                          .symmetric(
-                                                        horizontal: 8,
-                                                        vertical: 4,
-                                                      ),
-                                                      decoration: BoxDecoration(
-                                                        color:
-                                                            _getPriorityColor(
-                                                                issue.priority),
-                                                        borderRadius:
-                                                            BorderRadius
-                                                                .circular(12),
-                                                      ),
-                                                      child: Text(
-                                                        issue.priority
-                                                            .toUpperCase(),
-                                                        style: const TextStyle(
-                                                          color: Colors.white,
-                                                          fontSize: 10,
-                                                          fontWeight:
-                                                              FontWeight.bold,
-                                                        ),
-                                                      ),
-                                                    ),
-                                                    const SizedBox(width: 12),
-                                                    // Main content
-                                                    Expanded(
-                                                      child: Column(
-                                                        crossAxisAlignment:
-                                                            CrossAxisAlignment
-                                                                .start,
-                                                        children: [
-                                                          Text(
-                                                            issue.title,
-                                                            style:
-                                                                const TextStyle(
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .bold,
-                                                              fontSize: 16,
-                                                            ),
-                                                          ),
-                                                          const SizedBox(
-                                                              height: 8),
-                                                          // Project name
-                                                          Row(
-                                                            children: [
-                                                              Icon(
-                                                                Icons.folder,
-                                                                size: 14,
-                                                                color: Colors
-                                                                    .grey[600],
-                                                              ),
-                                                              const SizedBox(
-                                                                  width: 4),
-                                                              Text(
-                                                                issue
-                                                                    .projectName,
-                                                                style: Theme.of(
-                                                                        context)
-                                                                    .textTheme
-                                                                    .bodySmall
-                                                                    ?.copyWith(
-                                                                      color: const Color(
-                                                                          0xFF667eea),
-                                                                      fontWeight:
-                                                                          FontWeight
-                                                                              .bold,
-                                                                    ),
-                                                              ),
-                                                            ],
-                                                          ),
-                                                          const SizedBox(
-                                                              height: 8),
-                                                          Row(
-                                                            children: [
-                                                              Container(
-                                                                padding:
-                                                                    const EdgeInsets
-                                                                        .symmetric(
-                                                                  horizontal: 8,
-                                                                  vertical: 4,
-                                                                ),
-                                                                decoration:
-                                                                    BoxDecoration(
-                                                                  color: _getStatusColor(
-                                                                      issue
-                                                                          .status),
-                                                                  borderRadius:
-                                                                      BorderRadius
-                                                                          .circular(
-                                                                              12),
-                                                                ),
-                                                                child: Text(
-                                                                  issue.status
-                                                                      .replaceAll(
-                                                                          '_',
-                                                                          ' ')
-                                                                      .toUpperCase(),
-                                                                  style:
-                                                                      const TextStyle(
-                                                                    color: Colors
-                                                                        .white,
-                                                                    fontSize:
-                                                                        10,
-                                                                    fontWeight:
-                                                                        FontWeight
-                                                                            .bold,
-                                                                  ),
-                                                                ),
-                                                              ),
-                                                              const SizedBox(
-                                                                  width: 8),
-                                                              if (issue.tags
-                                                                  .isNotEmpty) ...[
-                                                                Icon(
-                                                                  Icons.label,
-                                                                  size: 14,
-                                                                  color: Colors
-                                                                          .grey[
-                                                                      600],
-                                                                ),
-                                                                const SizedBox(
-                                                                    width: 4),
-                                                                Text(
-                                                                  issue.tags,
-                                                                  style: Theme.of(
-                                                                          context)
-                                                                      .textTheme
-                                                                      .bodySmall
-                                                                      ?.copyWith(
-                                                                          color:
-                                                                              Colors.grey[600]),
-                                                                ),
-                                                              ],
-                                                            ],
-                                                          ),
-                                                          const SizedBox(
-                                                              height: 8),
-                                                          Row(
-                                                            children: [
-                                                              Icon(
-                                                                Icons.person,
-                                                                size: 14,
-                                                                color: Colors
-                                                                    .grey[600],
-                                                              ),
-                                                              const SizedBox(
-                                                                  width: 4),
-                                                              Text(
-                                                                'By ${issue.creatorName}',
-                                                                style: Theme.of(
-                                                                        context)
-                                                                    .textTheme
-                                                                    .bodySmall
-                                                                    ?.copyWith(
-                                                                        color: Colors
-                                                                            .grey[600]),
-                                                              ),
-                                                              if (issue
-                                                                      .assigneeName !=
-                                                                  null) ...[
-                                                                const SizedBox(
-                                                                    width: 16),
-                                                                Icon(
-                                                                  Icons
-                                                                      .assignment_ind,
-                                                                  size: 14,
-                                                                  color: Colors
-                                                                          .grey[
-                                                                      600],
-                                                                ),
-                                                                const SizedBox(
-                                                                    width: 4),
-                                                                Text(
-                                                                  'Assigned to ${issue.assigneeName}',
-                                                                  style: Theme.of(
-                                                                          context)
-                                                                      .textTheme
-                                                                      .bodySmall
-                                                                      ?.copyWith(
-                                                                          color:
-                                                                              Colors.grey[600]),
-                                                                ),
-                                                              ],
-                                                            ],
-                                                          ),
-                                                          const SizedBox(
-                                                              height: 4),
-                                                          Row(
-                                                            children: [
-                                                              Text(
-                                                                'Created: ${issue.createdAt}',
-                                                                style: Theme.of(
-                                                                        context)
-                                                                    .textTheme
-                                                                    .bodySmall
-                                                                    ?.copyWith(
-                                                                        color: Colors
-                                                                            .grey[600]),
-                                                              ),
-                                                              if (issue
-                                                                      .totalTimeSeconds >
-                                                                  0) ...[
-                                                                const SizedBox(
-                                                                    width: 16),
-                                                                Icon(
-                                                                  Icons.timer,
-                                                                  size: 12,
-                                                                  color: Colors
-                                                                          .grey[
-                                                                      600],
-                                                                ),
-                                                                const SizedBox(
-                                                                    width: 4),
-                                                                Text(
-                                                                  TimeTrackingService
-                                                                      .instance
-                                                                      .formatDurationHuman(
-                                                                          issue
-                                                                              .totalTimeSeconds),
-                                                                  style: Theme.of(
-                                                                          context)
-                                                                      .textTheme
-                                                                      .bodySmall
-                                                                      ?.copyWith(
-                                                                        color: Colors
-                                                                            .grey[600],
-                                                                        fontWeight:
-                                                                            FontWeight.w500,
-                                                                      ),
-                                                                ),
-                                                              ],
-                                                            ],
-                                                          ),
-                                                        ],
-                                                      ),
-                                                    ),
-                                                    const SizedBox(width: 12),
-                                                    // Right side action buttons
-                                                    Column(
-                                                      mainAxisSize:
-                                                          MainAxisSize.min,
-                                                      children: [
-                                                        // First row: info, start
-                                                        Row(
-                                                          mainAxisSize:
-                                                              MainAxisSize.min,
-                                                          children: [
-                                                            IconButton(
-                                                              onPressed: () =>
-                                                                  _showDescriptionDialog(
-                                                                      issue),
-                                                              icon: const Icon(
-                                                                  Icons.info,
-                                                                  size: 20),
-                                                              tooltip:
-                                                                  'View description',
-                                                              style: IconButton
-                                                                  .styleFrom(
-                                                                backgroundColor: const Color(
-                                                                        0xFF667eea)
-                                                                    .withValues(
-                                                                        alpha:
-                                                                            0.1),
-                                                                foregroundColor:
-                                                                    const Color(
-                                                                        0xFF667eea),
-                                                              ),
-                                                            ),
-                                                            if (UserSession
-                                                                .instance
-                                                                .isLoggedIn) ...[
-                                                              const SizedBox(
-                                                                  width: 4),
-                                                              IconButton(
-                                                                onPressed: () =>
-                                                                    _startTimer(
-                                                                        issue),
-                                                                icon: const Icon(
-                                                                    Icons
-                                                                        .play_arrow,
-                                                                    size: 20),
-                                                                tooltip:
-                                                                    'Start timer',
-                                                                style: IconButton
-                                                                    .styleFrom(
-                                                                  backgroundColor: const Color(
-                                                                          0xFF667eea)
-                                                                      .withValues(
-                                                                          alpha:
-                                                                              0.1),
-                                                                  foregroundColor:
-                                                                      const Color(
-                                                                          0xFF667eea),
-                                                                ),
-                                                              ),
-                                                            ],
-                                                          ],
-                                                        ),
-                                                        const SizedBox(
-                                                            height: 4),
-                                                        // Second row: edit, delete
-                                                        Row(
-                                                          mainAxisSize:
-                                                              MainAxisSize.min,
-                                                          children: [
-                                                            IconButton(
-                                                              onPressed: () =>
-                                                                  _editIssue(
-                                                                      issue),
-                                                              icon: const Icon(
-                                                                  Icons.edit,
-                                                                  size: 20),
-                                                              tooltip:
-                                                                  'Edit issue',
-                                                              style: IconButton
-                                                                  .styleFrom(
-                                                                backgroundColor: const Color(
-                                                                        0xFF667eea)
-                                                                    .withValues(
-                                                                        alpha:
-                                                                            0.1),
-                                                                foregroundColor:
-                                                                    const Color(
-                                                                        0xFF667eea),
-                                                              ),
-                                                            ),
-                                                            const SizedBox(
-                                                                width: 4),
-                                                            IconButton(
-                                                              onPressed: () =>
-                                                                  _deleteIssue(
-                                                                      issue),
-                                                              icon: const Icon(
-                                                                  Icons.delete,
-                                                                  size: 20),
-                                                              tooltip:
-                                                                  'Delete issue',
-                                                              style: IconButton
-                                                                  .styleFrom(
-                                                                backgroundColor:
-                                                                    Colors.red[
-                                                                        50],
-                                                                foregroundColor:
-                                                                    Colors.red[
-                                                                        700],
-                                                              ),
-                                                            ),
-                                                          ],
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ]),
-                                            ));
-                                      },
-                                    ),
-                                  ),
+                                : _buildIssuesListView(),
+              ),
+            ],
           ),
-          //),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _createIssue,
-        backgroundColor: const Color(0xFF008080),
-        foregroundColor: Colors.white,
-        heroTag: 'issues_fab',
-        child: const Icon(Icons.add),
-      ),
+        ),
+      ],
     );
   }
 }

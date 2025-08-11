@@ -189,10 +189,19 @@ class _MainLayoutState extends State<MainLayout> {
                       border:
                           Border(bottom: BorderSide(color: Color(0xFFE0E0E0))),
                     ),
-                    child: const Row(
+                    child: Row(
                       children: [
-                        TimerWidget(),
-                        Spacer(),
+                        // Mobile menu button (only visible on mobile)
+                        if (MediaQuery.of(context).size.width < 768)
+                          IconButton(
+                            icon: const Icon(Icons.menu),
+                            onPressed: () {
+                              _scaffoldKey.currentState?.openDrawer();
+                            },
+                            tooltip: 'Menu',
+                          ),
+                        const TimerWidget(),
+                        const Spacer(),
                       ],
                     ),
                   ),
