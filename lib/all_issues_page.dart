@@ -1722,15 +1722,6 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
         contentPadding: const EdgeInsets.all(16),
         title: Row(
           children: [
-            Expanded(
-              child: Text(
-                issue.title,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
-            ),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
@@ -1743,6 +1734,16 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
                   color: Colors.white,
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                issue.title,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
                 ),
               ),
             ),
@@ -1798,39 +1799,103 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
             ),
           ],
         ),
-        trailing: PopupMenuButton<String>(
-          onSelected: (value) {
-            switch (value) {
-              case 'edit':
-                _editIssue(issue);
-                break;
-              case 'delete':
-                _deleteIssue(issue);
-                break;
-            }
-          },
-          itemBuilder: (context) => [
-            const PopupMenuItem(
-              value: 'edit',
-              child: Row(
-                children: [
-                  Icon(Icons.edit),
-                  SizedBox(width: 8),
-                  Text('Edit'),
+        trailing: SizedBox(
+          //width: 120, // Fixed width to prevent overflow
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              // Start Timer button
+              //if (UserSession.instance.isLoggedIn)
+              IconButton(
+                onPressed: () => _showDescriptionDialog(issue),
+                icon: const Icon(Icons.info, size: 14),
+                //label: const Text('Details', style: TextStyle(fontSize: 12)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue[50],
+                  foregroundColor: Colors.blue[700],
+                  elevation: 0,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(4),
+                    side: const BorderSide(color: Colors.blue, width: 1),
+                  ),
+                ),
+                // ),
+              ),
+              /*
+              const SizedBox(width: 8),
+              IconButton(
+                onPressed: () => _startTimer(issue),
+                icon: const Icon(Icons.play_arrow, size: 14),
+                //label: const Text('T', style: TextStyle(fontSize: 12)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green[50],
+                  foregroundColor: Colors.green[700],
+                  elevation: 0,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(4),
+                    side: const BorderSide(color: Colors.green, width: 1),
+                  ),
+                ),
+                //),
+              ),
+              */
+              const SizedBox(width: 8),
+              PopupMenuButton<String>(
+                icon: const Icon(Icons.more_vert, size: 18),
+                tooltip: 'More options',
+                onSelected: (value) {
+                  switch (value) {
+                    case 'start timer':
+                      _startTimer(issue);
+                      break;
+                    case 'edit':
+                      _editIssue(issue);
+                      break;
+                    case 'delete':
+                      _deleteIssue(issue);
+                      break;
+                  }
+                },
+                itemBuilder: (context) => [
+                  const PopupMenuItem(
+                    value: 'start timer',
+                    child: Row(
+                      children: [
+                        Icon(Icons.play_arrow),
+                        SizedBox(width: 8),
+                        Text('Edit'),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem(
+                    value: 'edit',
+                    child: Row(
+                      children: [
+                        Icon(Icons.edit),
+                        SizedBox(width: 8),
+                        Text('Edit'),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem(
+                    value: 'delete',
+                    child: Row(
+                      children: [
+                        Icon(Icons.delete, color: Colors.red),
+                        SizedBox(width: 8),
+                        Text('Delete', style: TextStyle(color: Colors.red)),
+                      ],
+                    ),
+                  ),
                 ],
               ),
-            ),
-            const PopupMenuItem(
-              value: 'delete',
-              child: Row(
-                children: [
-                  Icon(Icons.delete, color: Colors.red),
-                  SizedBox(width: 8),
-                  Text('Delete', style: TextStyle(color: Colors.red)),
-                ],
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
