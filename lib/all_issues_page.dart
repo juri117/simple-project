@@ -1564,19 +1564,30 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
       onRefresh: _loadAllIssues,
       child: LayoutBuilder(
         builder: (context, constraints) {
+          final horizontalScrollController = ScrollController();
           return SizedBox(
             height: constraints.maxHeight,
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: allPossibleStatuses.map((status) {
-                  final statusIssues = filteredIssues
-                      .where((issue) => issue.status == status)
-                      .toList();
-                  return _buildKanbanColumn(
-                      status, statusIssues, constraints.maxHeight);
-                }).toList(),
+            child: RawScrollbar(
+              thumbColor: Colors.grey[600],
+              trackColor: Colors.grey[300],
+              controller: horizontalScrollController,
+              thumbVisibility: true,
+              trackVisibility: true,
+              thickness: 12,
+              radius: const Radius.circular(6),
+              child: SingleChildScrollView(
+                controller: horizontalScrollController,
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: allPossibleStatuses.map((status) {
+                    final statusIssues = filteredIssues
+                        .where((issue) => issue.status == status)
+                        .toList();
+                    return _buildKanbanColumn(
+                        status, statusIssues, constraints.maxHeight);
+                  }).toList(),
+                ),
               ),
             ),
           );

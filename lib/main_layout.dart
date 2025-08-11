@@ -173,7 +173,9 @@ class _MainLayoutState extends State<MainLayout> {
       body: Row(
         children: [
           // Sidebar for desktop
-          if (MediaQuery.of(context).size.width >= 768) _buildSidebar(),
+          if (MediaQuery.of(context).size.width >=
+              ResponsiveBreakpoints.mobileBreakpoint)
+            _buildSidebar(),
           // Main content
           Expanded(
             child: Column(
@@ -192,7 +194,8 @@ class _MainLayoutState extends State<MainLayout> {
                     child: Row(
                       children: [
                         // Mobile menu button (only visible on mobile)
-                        if (MediaQuery.of(context).size.width < 768)
+                        if (MediaQuery.of(context).size.width <
+                            ResponsiveBreakpoints.mobileBreakpoint)
                           IconButton(
                             icon: const Icon(Icons.menu),
                             onPressed: () {
@@ -404,6 +407,38 @@ class _MainLayoutState extends State<MainLayout> {
               },
             ),
           ),
+          // Change Password button (only show if user is logged in)
+          if (UserSession.instance.isLoggedIn)
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              child: ListTile(
+                leading: Icon(Icons.lock, color: Colors.grey[600]),
+                title: Text(
+                  'Change Password',
+                  style: TextStyle(color: Colors.grey[800]),
+                ),
+                onTap: () {
+                  Navigator.of(context).pop(); // Close drawer
+                  _showChangePasswordDialog();
+                },
+              ),
+            ),
+          // Logout button (only show if user is logged in)
+          if (UserSession.instance.isLoggedIn)
+            Container(
+              margin: const EdgeInsets.all(8),
+              child: ListTile(
+                leading: Icon(Icons.logout, color: Colors.grey[600]),
+                title: Text(
+                  'Logout',
+                  style: TextStyle(color: Colors.grey[800]),
+                ),
+                onTap: () {
+                  Navigator.of(context).pop(); // Close drawer
+                  _logout();
+                },
+              ),
+            ),
         ],
       ),
     );

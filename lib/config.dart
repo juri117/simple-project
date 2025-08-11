@@ -166,3 +166,18 @@ class Config {
   // int get timeoutSeconds => _config['timeout'] ?? 30;
   // String get apiVersion => _config['api_version'] ?? 'v1';
 }
+
+// Responsive design constants
+class ResponsiveBreakpoints {
+  /// Breakpoint for switching between mobile and desktop layouts
+  ///
+  /// - Below this width: Mobile layout (drawer menu)
+  /// - Above this width: Desktop layout (sidebar)
+  ///
+  /// Common values to experiment with:
+  /// - 600: Mobile-first approach
+  /// - 768: Tablet/desktop (current default)
+  /// - 900: Desktop-focused
+  /// - 1024: Large desktop
+  static const double mobileBreakpoint = 1024.0; //768
+}
