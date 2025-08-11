@@ -1587,6 +1587,8 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
 
   Widget _buildKanbanColumn(
       String status, List<Issue> issues, double availableHeight) {
+    final scrollController = ScrollController();
+
     return Container(
       width: 320,
       margin: const EdgeInsets.all(8),
@@ -1683,12 +1685,23 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
                       bottomRight: Radius.circular(8),
                     ),
                   ),
-                  child: ListView.builder(
-                    padding: const EdgeInsets.all(8),
-                    itemCount: issues.length,
-                    itemBuilder: (context, index) {
-                      return _buildKanbanCard(issues[index]);
-                    },
+                  child: RawScrollbar(
+                    thumbColor: _getStatusColor(status),
+                    trackColor: _getStatusColor(status).withValues(alpha: 0.2),
+                    controller: scrollController,
+                    thumbVisibility: true,
+                    trackVisibility: true,
+                    thickness: 12,
+                    radius: const Radius.circular(6),
+                    child: ListView.builder(
+                      controller: scrollController,
+                      primary: false,
+                      padding: const EdgeInsets.all(8),
+                      itemCount: issues.length,
+                      itemBuilder: (context, index) {
+                        return _buildKanbanCard(issues[index]);
+                      },
+                    ),
                   ),
                 );
               },
