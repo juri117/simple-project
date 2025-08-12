@@ -10,6 +10,14 @@ import 'http_service.dart';
 import 'file_attachment.dart';
 import 'tag.dart';
 
+// Helper function to convert hex color string to Color
+Color hexToColor(String hexString) {
+  final buffer = StringBuffer();
+  if (hexString.length == 6 || hexString.length == 7) buffer.write('ff');
+  buffer.write(hexString.replaceFirst('#', ''));
+  return Color(int.parse(buffer.toString(), radix: 16));
+}
+
 class FilterOption<T> {
   final T value;
   final String label;
@@ -61,6 +69,7 @@ class Issue {
   final String projectName; // Added project name for all issues view
   final int totalTimeSeconds; // Total time spent on this issue
   final List<FileAttachment> attachments; // File attachments
+  final List<Tag> tagObjects; // Tag objects with colors
 
   Issue({
     required this.id,
@@ -77,6 +86,7 @@ class Issue {
     required this.projectName,
     this.totalTimeSeconds = 0,
     this.attachments = const [],
+    this.tagObjects = const [],
   });
 
   factory Issue.fromJson(Map<String, dynamic> json) {
@@ -90,6 +100,22 @@ class Issue {
         print('Error parsing attachments: $e');
         attachments = [];
       }
+    }
+
+    List<Tag> tagObjects = [];
+    if (json['tag_objects'] != null) {
+      try {
+        tagObjects = (json['tag_objects'] as List)
+            .map((tag) => Tag.fromJson(tag))
+            .toList();
+        print('Issue ${json['id']}: Parsed ${tagObjects.length} tag objects');
+      } catch (e) {
+        print('Error parsing tag objects: $e');
+        tagObjects = [];
+      }
+    } else {
+      print(
+          'Issue ${json['id']}: No tag_objects field found, tags string: "${json['tags']}"');
     }
 
     return Issue(
@@ -107,6 +133,7 @@ class Issue {
       projectName: json['project_name'] ?? 'Unknown Project',
       totalTimeSeconds: json['total_time_seconds'] ?? 0,
       attachments: attachments,
+      tagObjects: tagObjects,
     );
   }
 }
@@ -602,6 +629,8 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
             assigneeName: issue.assigneeName,
             projectName: issue.projectName,
             totalTimeSeconds: timeSpent,
+            attachments: issue.attachments,
+            tagObjects: issue.tagObjects,
           );
         }).toList();
       });
@@ -1881,6 +1910,31 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
                     fontWeight: FontWeight.w500,
                   ),
                 ),
+                const SizedBox(width: 8),
+                ...issue.tagObjects
+                    .map((tag) => Padding(
+                        padding: const EdgeInsets.only(right: 4),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: hexToColor(tag.color).withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: hexToColor(tag.color).withOpacity(0.5),
+                              width: 1,
+                            ),
+                          ),
+                          child: Text(
+                            tag.shortName,
+                            style: TextStyle(
+                              fontSize: 9,
+                              color: hexToColor(tag.color),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        )))
+                    .toList(),
                 const Spacer(),
                 Icon(Icons.schedule, size: 16, color: Colors.grey[600]),
                 const SizedBox(width: 4),
@@ -2251,6 +2305,7 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
                       const SizedBox(height: 3),
                       // Assignee and tags in one line
                       Row(
+                        mainAxisAlignment: MainAxisAlignment.start,
                         children: [
                           Icon(
                             Icons.person,
@@ -2258,34 +2313,45 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
                             color: Colors.grey[600],
                           ),
                           const SizedBox(width: 3),
-                          Expanded(
-                            child: Text(
-                              issue.assigneeName ?? 'Unassigned',
-                              style: TextStyle(
-                                fontSize: 10,
-                                color: Colors.grey[600],
-                              ),
-                              overflow: TextOverflow.ellipsis,
+                          //Expanded(
+                          //  child:
+                          Text(
+                            issue.assigneeName ?? 'Unassigned',
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: Colors.grey[600],
                             ),
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          if (issue.tags.isNotEmpty) ...[
+                          //),
+                          if (issue.tagObjects.isNotEmpty) ...[
                             const SizedBox(width: 8),
-                            const Icon(
-                              Icons.label,
-                              size: 11,
-                              color: Color(0xFF757575),
-                            ),
-                            const SizedBox(width: 3),
-                            Expanded(
-                              child: Text(
-                                issue.tags,
-                                style: const TextStyle(
-                                  fontSize: 10,
-                                  color: Color(0xFF757575),
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
+                            ...issue.tagObjects
+                                .map((tag) => Padding(
+                                    padding: const EdgeInsets.only(left: 4),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: hexToColor(tag.color)
+                                            .withOpacity(0.2),
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(
+                                          color: hexToColor(tag.color)
+                                              .withOpacity(0.5),
+                                          width: 1,
+                                        ),
+                                      ),
+                                      child: Text(
+                                        tag.shortName,
+                                        style: TextStyle(
+                                          fontSize: 9,
+                                          color: hexToColor(tag.color),
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    )))
+                                .toList(),
                           ],
                         ],
                       ),

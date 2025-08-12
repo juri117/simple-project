@@ -69,8 +69,9 @@ try {
             
             $issues = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
-            // Get file attachments for each issue
+            // Get file attachments and tag objects for each issue
             foreach ($issues as &$issue) {
+                // Get file attachments
                 $stmt = $pdo->prepare("
                     SELECT 
                         fa.id, fa.original_filename, fa.stored_filename, 
@@ -83,6 +84,25 @@ try {
                 ");
                 $stmt->execute([$issue['id']]);
                 $issue['attachments'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                
+                // Get tag objects for this issue
+                $issue['tag_objects'] = [];
+                if (!empty($issue['tags'])) {
+                    $tagNames = array_map('trim', explode(',', $issue['tags']));
+                    $tagNames = array_filter($tagNames); // Remove empty strings
+                    
+                    if (!empty($tagNames)) {
+                        $placeholders = str_repeat('?,', count($tagNames) - 1) . '?';
+                        $stmt = $pdo->prepare("
+                            SELECT id, short_name, description, color, created_at, updated_at
+                            FROM tags
+                            WHERE short_name IN ($placeholders) AND disabled = 0
+                            ORDER BY short_name ASC
+                        ");
+                        $stmt->execute($tagNames);
+                        $issue['tag_objects'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                    }
+                }
             }
             
             echo json_encode([
