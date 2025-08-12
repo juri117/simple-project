@@ -968,6 +968,32 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
     }
   }
 
+  TextStyle _getTitleStyle(String priority, {double fontSize = 16}) {
+    switch (priority.toLowerCase()) {
+      case 'high':
+        return TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: fontSize,
+        );
+      case 'medium':
+        return TextStyle(
+          fontWeight: FontWeight.normal,
+          fontSize: fontSize,
+        );
+      case 'low':
+        return TextStyle(
+          fontWeight: FontWeight.normal,
+          fontSize: fontSize,
+          color: Colors.grey[500],
+        );
+      default:
+        return TextStyle(
+          fontWeight: FontWeight.normal,
+          fontSize: fontSize,
+        );
+    }
+  }
+
   Color _getStatusColor(String status) {
     switch (status.toLowerCase()) {
       case 'new':
@@ -1814,10 +1840,7 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
             Expanded(
               child: Text(
                 issue.title,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
+                style: _getTitleStyle(issue.priority, fontSize: 16),
               ),
             ),
           ],
@@ -2002,6 +2025,7 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            /*
                             Container(
                               width: 8,
                               height: 8,
@@ -2011,13 +2035,12 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
                                 shape: BoxShape.circle,
                               ),
                             ),
+                            */
                             Expanded(
                               child: Text(
                                 issue.title,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 13,
-                                ),
+                                style: _getTitleStyle(issue.priority,
+                                    fontSize: 13),
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -2075,6 +2098,7 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          /*
                           Container(
                             width: 8,
                             height: 8,
@@ -2085,12 +2109,13 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
                               shape: BoxShape.circle,
                             ),
                           ),
+                          */
                           Expanded(
                             child: Text(
                               issue.title,
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 13,
+                              style:
+                                  _getTitleStyle(issue.priority, fontSize: 13)
+                                      .copyWith(
                                 color: Colors.grey[600],
                               ),
                               maxLines: 2,
@@ -2160,6 +2185,7 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          /*
                           Container(
                             width: 8,
                             height: 8,
@@ -2169,13 +2195,12 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
                               shape: BoxShape.circle,
                             ),
                           ),
+                          */
                           Expanded(
                             child: Text(
                               issue.title,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 13,
-                              ),
+                              style:
+                                  _getTitleStyle(issue.priority, fontSize: 13),
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                             ),
