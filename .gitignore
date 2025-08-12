@@ -49,3 +49,4 @@ app.*.map.json
 
 # Deployment-specific configuration (overrides bundled config)
 config.json
+backend/uploads/
