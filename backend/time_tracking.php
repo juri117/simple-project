@@ -30,6 +30,12 @@ switch ($method) {
             stopTimer($pdo, $input);
         } elseif (isset($input['action']) && $input['action'] === 'stop_manual') {
             stopTimerManual($pdo, $input);
+        } elseif (isset($input['action']) && $input['action'] === 'create_entry') {
+            createTimerEntry($pdo, $input);
+        } elseif (isset($input['action']) && $input['action'] === 'update_entry') {
+            updateTimerEntry($pdo, $input);
+        } elseif (isset($input['action']) && $input['action'] === 'delete_entry') {
+            deleteTimerEntry($pdo, $input);
         } else {
             http_response_code(400);
             echo json_encode(['success' => false, 'error' => 'Invalid action']);
@@ -44,6 +50,9 @@ switch ($method) {
                     break;
                 case 'stats':
                     getTimeStats($pdo, $_GET);
+                    break;
+                case 'entries':
+                    getTimerEntries($pdo, $_GET);
                     break;
                 default:
                     http_response_code(400);
@@ -312,6 +321,156 @@ function getTimeStats($pdo, $params) {
     } catch (PDOException $e) {
         http_response_code(500);
         echo json_encode(['success' => false, 'error' => 'Failed to get time stats: ' . $e->getMessage()]);
+    }
+}
+
+function createTimerEntry($pdo, $input) {
+    if (!isset($input['user_id']) || !isset($input['issue_id']) || !isset($input['start_time']) || !isset($input['stop_time'])) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'error' => 'user_id, issue_id, start_time, and stop_time are required']);
+        return;
+    }
+    
+    $userId = (int)$input['user_id'];
+    $issueId = (int)$input['issue_id'];
+    $startTime = (int)$input['start_time'];
+    $stopTime = (int)$input['stop_time'];
+    
+    // Validate that stop_time is after start_time
+    if ($stopTime <= $startTime) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'error' => 'stop_time must be after start_time']);
+        return;
+    }
+    
+    try {
+        $stmt = $pdo->prepare("INSERT INTO time_tracking (user_id, issue_id, start_time, stop_time) VALUES (?, ?, ?, ?)");
+        $stmt->execute([$userId, $issueId, $startTime, $stopTime]);
+        
+        echo json_encode([
+            'success' => true,
+            'message' => 'Timer entry created successfully',
+            'entry_id' => $pdo->lastInsertId()
+        ]);
+    } catch (PDOException $e) {
+        http_response_code(500);
+        echo json_encode(['success' => false, 'error' => 'Failed to create timer entry: ' . $e->getMessage()]);
+    }
+}
+
+function updateTimerEntry($pdo, $input) {
+    if (!isset($input['entry_id']) || !isset($input['start_time']) || !isset($input['stop_time'])) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'error' => 'entry_id, start_time, and stop_time are required']);
+        return;
+    }
+    
+    $entryId = (int)$input['entry_id'];
+    $startTime = (int)$input['start_time'];
+    $stopTime = (int)$input['stop_time'];
+    
+    // Validate that stop_time is after start_time
+    if ($stopTime <= $startTime) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'error' => 'stop_time must be after start_time']);
+        return;
+    }
+    
+    try {
+        $stmt = $pdo->prepare("UPDATE time_tracking SET start_time = ?, stop_time = ? WHERE id = ?");
+        $result = $stmt->execute([$startTime, $stopTime, $entryId]);
+        
+        if ($stmt->rowCount() > 0) {
+            echo json_encode([
+                'success' => true,
+                'message' => 'Timer entry updated successfully'
+            ]);
+        } else {
+            echo json_encode([
+                'success' => false,
+                'error' => 'Timer entry not found'
+            ]);
+        }
+    } catch (PDOException $e) {
+        http_response_code(500);
+        echo json_encode(['success' => false, 'error' => 'Failed to update timer entry: ' . $e->getMessage()]);
+    }
+}
+
+function deleteTimerEntry($pdo, $input) {
+    if (!isset($input['entry_id'])) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'error' => 'entry_id is required']);
+        return;
+    }
+    
+    $entryId = (int)$input['entry_id'];
+    
+    try {
+        $stmt = $pdo->prepare("DELETE FROM time_tracking WHERE id = ?");
+        $result = $stmt->execute([$entryId]);
+        
+        if ($stmt->rowCount() > 0) {
+            echo json_encode([
+                'success' => true,
+                'message' => 'Timer entry deleted successfully'
+            ]);
+        } else {
+            echo json_encode([
+                'success' => false,
+                'error' => 'Timer entry not found'
+            ]);
+        }
+    } catch (PDOException $e) {
+        http_response_code(500);
+        echo json_encode(['success' => false, 'error' => 'Failed to delete timer entry: ' . $e->getMessage()]);
+    }
+}
+
+function getTimerEntries($pdo, $params) {
+    if (!isset($params['issue_id'])) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'error' => 'issue_id is required']);
+        return;
+    }
+    
+    $issueId = (int)$params['issue_id'];
+    
+    try {
+        $stmt = $pdo->prepare("
+            SELECT 
+                tt.id,
+                tt.user_id,
+                tt.issue_id,
+                tt.start_time,
+                tt.stop_time,
+                tt.created_at,
+
+                u.username as user_name,
+                i.title as issue_title,
+                p.name as project_name,
+                CASE 
+                    WHEN tt.stop_time IS NOT NULL 
+                    THEN tt.stop_time - tt.start_time 
+                    ELSE 0 
+                END as duration_seconds
+            FROM time_tracking tt
+            JOIN users u ON tt.user_id = u.id
+            JOIN issues i ON tt.issue_id = i.id
+            JOIN projects p ON i.project_id = p.id
+            WHERE tt.issue_id = ?
+            ORDER BY tt.start_time DESC
+        ");
+        $stmt->execute([$issueId]);
+        $entries = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        echo json_encode([
+            'success' => true,
+            'entries' => $entries
+        ]);
+    } catch (PDOException $e) {
+        http_response_code(500);
+        echo json_encode(['success' => false, 'error' => 'Failed to get timer entries: ' . $e->getMessage()]);
     }
 }
 ?>

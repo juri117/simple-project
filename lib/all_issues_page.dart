@@ -1259,64 +1259,7 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
   void _showDescriptionDialog(Issue issue) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Issue Details: ${issue.title}'),
-        content: Container(
-          width: double.maxFinite,
-          constraints: const BoxConstraints(maxHeight: 600),
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Description section
-                const Text(
-                  'Description',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                issue.description.isNotEmpty
-                    ? IssueDescriptionWidget(
-                        description: issue.description,
-                        maxLines: 100,
-                      )
-                    : const Text(
-                        'No description provided.',
-                        style: TextStyle(
-                          fontStyle: FontStyle.italic,
-                          color: Colors.grey,
-                        ),
-                      ),
-                const SizedBox(height: 16),
-                // Attachments section
-                if (issue.attachments.isNotEmpty) ...[
-                  const Text(
-                    'Attachments',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  ...issue.attachments.map((attachment) {
-                    return FileAttachmentWidget(
-                      attachment: attachment,
-                    );
-                  }).toList(),
-                ],
-              ],
-            ),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Close'),
-          ),
-        ],
-      ),
+      builder: (context) => IssueDetailDialog(issue: issue),
     );
   }
 
@@ -3207,6 +3150,838 @@ class _IssueDialogState extends State<IssueDialog> {
             }
           },
           child: Text(widget.issue == null ? 'Create' : 'Update'),
+        ),
+      ],
+    );
+  }
+}
+
+class IssueDetailDialog extends StatefulWidget {
+  final Issue issue;
+
+  const IssueDetailDialog({
+    super.key,
+    required this.issue,
+  });
+
+  @override
+  State<IssueDetailDialog> createState() => _IssueDetailDialogState();
+}
+
+class _IssueDetailDialogState extends State<IssueDetailDialog> {
+  List<Map<String, dynamic>> _timerEntries = [];
+  bool _isLoadingEntries = true;
+  String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTimerEntries();
+  }
+
+  Future<void> _loadTimerEntries() async {
+    setState(() {
+      _isLoadingEntries = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final entries =
+          await TimeTrackingService.instance.getTimerEntries(widget.issue.id);
+      if (mounted) {
+        setState(() {
+          _timerEntries = entries ?? [];
+          _isLoadingEntries = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Failed to load timer entries: $e';
+          _isLoadingEntries = false;
+        });
+      }
+    }
+  }
+
+  String _formatDateTime(String timestamp) {
+    try {
+      final dateTime = DateTime.parse(timestamp);
+      return '${dateTime.day}/${dateTime.month}/${dateTime.year} ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+    } catch (e) {
+      return timestamp;
+    }
+  }
+
+  String _formatUnixTime(int unixTime) {
+    final dateTime = DateTime.fromMillisecondsSinceEpoch(unixTime * 1000);
+    return '${dateTime.day}/${dateTime.month}/${dateTime.year} ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      child: Container(
+        width: 800,
+        height: 600,
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    widget.issue.title,
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: const Icon(Icons.close),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+
+            // Content
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Issue Information Section
+                    _buildInfoSection('Issue Information', [
+                      _buildInfoRow('Project', widget.issue.projectName),
+                      _buildInfoRow(
+                          'Status',
+                          widget.issue.status
+                              .replaceAll('_', ' ')
+                              .toUpperCase()),
+                      _buildInfoRow(
+                          'Priority', widget.issue.priority.toUpperCase()),
+                      _buildInfoRow('Creator', widget.issue.creatorName),
+                      _buildInfoRow('Assignee',
+                          widget.issue.assigneeName ?? 'Unassigned'),
+                      _buildInfoRow(
+                          'Created', _formatDateTime(widget.issue.createdAt)),
+                      _buildInfoRow(
+                          'Updated', _formatDateTime(widget.issue.updatedAt)),
+                      if (widget.issue.totalTimeSeconds > 0)
+                        _buildInfoRow(
+                            'Total Time',
+                            TimeTrackingService.instance.formatDurationHuman(
+                                widget.issue.totalTimeSeconds)),
+                    ]),
+
+                    const SizedBox(height: 24),
+
+                    // Tags Section
+                    if (widget.issue.tagObjects.isNotEmpty) ...[
+                      _buildInfoSection('Tags', [
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 4,
+                          children: widget.issue.tagObjects.map((tag) {
+                            return Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: hexToColor(tag.color)
+                                    .withValues(alpha: 0.2),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: hexToColor(tag.color)
+                                      .withValues(alpha: 0.5),
+                                  width: 1,
+                                ),
+                              ),
+                              child: Text(
+                                tag.shortName,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: hexToColor(tag.color),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ]),
+                      const SizedBox(height: 24),
+                    ],
+
+                    // Description Section
+                    _buildInfoSection('Description', [
+                      widget.issue.description.isNotEmpty
+                          ? IssueDescriptionWidget(
+                              description: widget.issue.description,
+                              maxLines: 100,
+                            )
+                          : const Text(
+                              'No description provided.',
+                              style: TextStyle(
+                                fontStyle: FontStyle.italic,
+                                color: Colors.grey,
+                              ),
+                            ),
+                    ]),
+
+                    const SizedBox(height: 24),
+
+                    // Attachments Section
+                    if (widget.issue.attachments.isNotEmpty) ...[
+                      _buildInfoSection('Attachments', [
+                        ...widget.issue.attachments.map((attachment) {
+                          return FileAttachmentWidget(
+                            attachment: attachment,
+                          );
+                        }).toList(),
+                      ]),
+                      const SizedBox(height: 24),
+                    ],
+
+                    // Timer Entries Section
+                    _buildTimerEntriesSection(),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoSection(String title, List<Widget> children) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF008080),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.grey[50],
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.grey[300]!),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: children,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildInfoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 100,
+            child: Text(
+              '$label:',
+              style: const TextStyle(
+                fontWeight: FontWeight.w500,
+                color: Colors.grey,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTimerEntriesSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Text(
+              'Timer Entries',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF008080),
+              ),
+            ),
+            const Spacer(),
+            if (UserSession.instance.isLoggedIn)
+              ElevatedButton.icon(
+                onPressed: () => _showAddTimerEntryDialog(),
+                icon: const Icon(Icons.add),
+                label: const Text('Add Entry'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF008080),
+                  foregroundColor: Colors.white,
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.grey[50],
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.grey[300]!),
+          ),
+          child: _isLoadingEntries
+              ? const Center(child: CircularProgressIndicator())
+              : _errorMessage != null
+                  ? Column(
+                      children: [
+                        Text(
+                          _errorMessage!,
+                          style: const TextStyle(color: Colors.red),
+                        ),
+                        const SizedBox(height: 8),
+                        ElevatedButton(
+                          onPressed: _loadTimerEntries,
+                          child: const Text('Retry'),
+                        ),
+                      ],
+                    )
+                  : _timerEntries.isEmpty
+                      ? const Text(
+                          'No timer entries found.',
+                          style: TextStyle(
+                            fontStyle: FontStyle.italic,
+                            color: Colors.grey,
+                          ),
+                        )
+                      : Column(
+                          children: _timerEntries.map((entry) {
+                            return _buildTimerEntryCard(entry);
+                          }).toList(),
+                        ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTimerEntryCard(Map<String, dynamic> entry) {
+    final startTime = entry['start_time'] as int;
+    final stopTime = entry['stop_time'] as int?;
+    final durationSeconds = entry['duration_seconds'] as int;
+    final userName = entry['user_name'] as String;
+    final isActive = stopTime == null;
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: ListTile(
+        contentPadding: const EdgeInsets.all(12),
+        title: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'By $userName',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w500,
+                      fontSize: 14,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${_formatUnixTime(startTime)} - ${isActive ? 'Active' : _formatUnixTime(stopTime)}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (!isActive) ...[
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF008080),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  TimeTrackingService.instance
+                      .formatDurationHuman(durationSeconds),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ] else ...[
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.orange,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Text(
+                  'ACTIVE',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+        trailing: UserSession.instance.isLoggedIn
+            ? PopupMenuButton<String>(
+                onSelected: (value) {
+                  switch (value) {
+                    case 'edit':
+                      _showEditTimerEntryDialog(entry);
+                      break;
+                    case 'delete':
+                      _deleteTimerEntry(entry);
+                      break;
+                  }
+                },
+                itemBuilder: (context) => [
+                  const PopupMenuItem(
+                    value: 'edit',
+                    child: Row(
+                      children: [
+                        Icon(Icons.edit),
+                        SizedBox(width: 8),
+                        Text('Edit'),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem(
+                    value: 'delete',
+                    child: Row(
+                      children: [
+                        Icon(Icons.delete, color: Colors.red),
+                        SizedBox(width: 8),
+                        Text('Delete', style: TextStyle(color: Colors.red)),
+                      ],
+                    ),
+                  ),
+                ],
+              )
+            : null,
+      ),
+    );
+  }
+
+  Future<void> _showAddTimerEntryDialog() async {
+    final result = await showDialog<Map<String, dynamic>>(
+      context: context,
+      builder: (context) => TimerEntryDialog(
+        issueId: widget.issue.id,
+        isNewEntry: true,
+      ),
+    );
+
+    if (result != null) {
+      await _loadTimerEntries();
+    }
+  }
+
+  Future<void> _showEditTimerEntryDialog(Map<String, dynamic> entry) async {
+    final result = await showDialog<Map<String, dynamic>>(
+      context: context,
+      builder: (context) => TimerEntryDialog(
+        issueId: widget.issue.id,
+        entry: entry,
+        isNewEntry: false,
+      ),
+    );
+
+    if (result != null) {
+      await _loadTimerEntries();
+    }
+  }
+
+  Future<void> _deleteTimerEntry(Map<String, dynamic> entry) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Timer Entry'),
+        content:
+            const Text('Are you sure you want to delete this timer entry?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        final success =
+            await TimeTrackingService.instance.deleteTimerEntry(entry['id']);
+        if (success) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Timer entry deleted successfully'),
+                backgroundColor: Colors.green,
+              ),
+            );
+          }
+          await _loadTimerEntries();
+        } else {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Failed to delete timer entry'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
+  }
+}
+
+class TimerEntryDialog extends StatefulWidget {
+  final int issueId;
+  final Map<String, dynamic>? entry;
+  final bool isNewEntry;
+
+  const TimerEntryDialog({
+    super.key,
+    required this.issueId,
+    this.entry,
+    required this.isNewEntry,
+  });
+
+  @override
+  State<TimerEntryDialog> createState() => _TimerEntryDialogState();
+}
+
+class _TimerEntryDialogState extends State<TimerEntryDialog> {
+  final _formKey = GlobalKey<FormState>();
+  DateTime _startDate = DateTime.now();
+  TimeOfDay _startTime = TimeOfDay.now();
+  DateTime _endDate = DateTime.now();
+  TimeOfDay _endTime = TimeOfDay.now();
+
+  @override
+  void initState() {
+    super.initState();
+    if (!widget.isNewEntry && widget.entry != null) {
+      final startTime = DateTime.fromMillisecondsSinceEpoch(
+          widget.entry!['start_time'] * 1000);
+      final stopTime = DateTime.fromMillisecondsSinceEpoch(
+          widget.entry!['stop_time'] * 1000);
+
+      _startDate = DateTime(startTime.year, startTime.month, startTime.day);
+      _startTime = TimeOfDay(hour: startTime.hour, minute: startTime.minute);
+      _endDate = DateTime(stopTime.year, stopTime.month, stopTime.day);
+      _endTime = TimeOfDay(hour: stopTime.hour, minute: stopTime.minute);
+    }
+  }
+
+  Future<void> _selectDate(BuildContext context, bool isStart) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: isStart ? _startDate : _endDate,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+    );
+    if (picked != null) {
+      setState(() {
+        if (isStart) {
+          _startDate = picked;
+        } else {
+          _endDate = picked;
+        }
+      });
+    }
+  }
+
+  Future<void> _selectTime(BuildContext context, bool isStart) async {
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: isStart ? _startTime : _endTime,
+    );
+    if (picked != null) {
+      setState(() {
+        if (isStart) {
+          _startTime = picked;
+        } else {
+          _endTime = picked;
+        }
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(widget.isNewEntry ? 'Add Timer Entry' : 'Edit Timer Entry'),
+      content: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Start Date and Time
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Start Date'),
+                      const SizedBox(height: 4),
+                      InkWell(
+                        onTap: () => _selectDate(context, true),
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey[300]!),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.calendar_today, size: 16),
+                              const SizedBox(width: 8),
+                              Text(
+                                  '${_startDate.day}/${_startDate.month}/${_startDate.year}'),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Start Time'),
+                      const SizedBox(height: 4),
+                      InkWell(
+                        onTap: () => _selectTime(context, true),
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey[300]!),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.access_time, size: 16),
+                              const SizedBox(width: 8),
+                              Text(
+                                  '${_startTime.hour.toString().padLeft(2, '0')}:${_startTime.minute.toString().padLeft(2, '0')}'),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // End Date and Time
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('End Date'),
+                      const SizedBox(height: 4),
+                      InkWell(
+                        onTap: () => _selectDate(context, false),
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey[300]!),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.calendar_today, size: 16),
+                              const SizedBox(width: 8),
+                              Text(
+                                  '${_endDate.day}/${_endDate.month}/${_endDate.year}'),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('End Time'),
+                      const SizedBox(height: 4),
+                      InkWell(
+                        onTap: () => _selectTime(context, false),
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey[300]!),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.access_time, size: 16),
+                              const SizedBox(width: 8),
+                              Text(
+                                  '${_endTime.hour.toString().padLeft(2, '0')}:${_endTime.minute.toString().padLeft(2, '0')}'),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          onPressed: () async {
+            if (_formKey.currentState!.validate()) {
+              final startDateTime = DateTime(
+                _startDate.year,
+                _startDate.month,
+                _startDate.day,
+                _startTime.hour,
+                _startTime.minute,
+              );
+              final endDateTime = DateTime(
+                _endDate.year,
+                _endDate.month,
+                _endDate.day,
+                _endTime.hour,
+                _endTime.minute,
+              );
+
+              if (endDateTime.isBefore(startDateTime)) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('End time must be after start time'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+                return;
+              }
+
+              final startTime = startDateTime.millisecondsSinceEpoch ~/ 1000;
+              final stopTime = endDateTime.millisecondsSinceEpoch ~/ 1000;
+
+              try {
+                bool success;
+                if (widget.isNewEntry) {
+                  success = await TimeTrackingService.instance.createTimerEntry(
+                    userId: UserSession.instance.userId!,
+                    issueId: widget.issueId,
+                    startTime: startTime,
+                    stopTime: stopTime,
+                  );
+                } else {
+                  success = await TimeTrackingService.instance.updateTimerEntry(
+                    entryId: widget.entry!['id'],
+                    startTime: startTime,
+                    stopTime: stopTime,
+                  );
+                }
+
+                if (success) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(widget.isNewEntry
+                            ? 'Timer entry created successfully'
+                            : 'Timer entry updated successfully'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  }
+                  Navigator.of(context).pop({'success': true});
+                } else {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(widget.isNewEntry
+                            ? 'Failed to create timer entry'
+                            : 'Failed to update timer entry'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Error: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
+            }
+          },
+          child: Text(widget.isNewEntry ? 'Create' : 'Update'),
         ),
       ],
     );

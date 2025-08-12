@@ -205,6 +205,126 @@ class TimeTrackingService {
     }
   }
 
+  // Get timer entries for a specific issue
+  Future<List<Map<String, dynamic>>?> getTimerEntries(int issueId) async {
+    try {
+      final uri = Uri.parse(Config.instance.buildApiUrl('time_tracking.php'))
+          .replace(queryParameters: {
+        'action': 'entries',
+        'issue_id': issueId.toString()
+      });
+
+      final response = await HttpService().get(uri.toString());
+
+      // Handle authentication errors
+      if (await HttpService().handleAuthError(response)) {
+        return null;
+      }
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['success'] == true) {
+          return List<Map<String, dynamic>>.from(data['entries']);
+        }
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // Create a new timer entry
+  Future<bool> createTimerEntry({
+    required int userId,
+    required int issueId,
+    required int startTime,
+    required int stopTime,
+  }) async {
+    try {
+      final response = await HttpService().post(
+        Config.instance.buildApiUrl('time_tracking.php'),
+        body: {
+          'action': 'create_entry',
+          'user_id': userId,
+          'issue_id': issueId,
+          'start_time': startTime,
+          'stop_time': stopTime,
+        },
+      );
+
+      // Handle authentication errors
+      if (await HttpService().handleAuthError(response)) {
+        return false;
+      }
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return data['success'] == true;
+      }
+      return false;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // Update an existing timer entry
+  Future<bool> updateTimerEntry({
+    required int entryId,
+    required int startTime,
+    required int stopTime,
+  }) async {
+    try {
+      final response = await HttpService().post(
+        Config.instance.buildApiUrl('time_tracking.php'),
+        body: {
+          'action': 'update_entry',
+          'entry_id': entryId,
+          'start_time': startTime,
+          'stop_time': stopTime,
+        },
+      );
+
+      // Handle authentication errors
+      if (await HttpService().handleAuthError(response)) {
+        return false;
+      }
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return data['success'] == true;
+      }
+      return false;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // Delete a timer entry
+  Future<bool> deleteTimerEntry(int entryId) async {
+    try {
+      final response = await HttpService().post(
+        Config.instance.buildApiUrl('time_tracking.php'),
+        body: {
+          'action': 'delete_entry',
+          'entry_id': entryId,
+        },
+      );
+
+      // Handle authentication errors
+      if (await HttpService().handleAuthError(response)) {
+        return false;
+      }
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return data['success'] == true;
+      }
+      return false;
+    } catch (e) {
+      return false;
+    }
+  }
+
   // Format seconds to HH:MM:SS
   String formatDuration(int seconds) {
     final hours = seconds ~/ 3600;
