@@ -282,6 +282,8 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
   Set<String> _selectedStatuses = {};
   Set<String> _selectedTags = {};
   Set<String> _selectedPriorities = {};
+  String _searchText = ''; // Search text for filtering issue titles
+  final TextEditingController _searchController = TextEditingController();
   bool _urlFiltersParsed = false;
 
   @override
@@ -398,6 +400,10 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
       if (uri.queryParameters['tags'] != null) {
         _selectedTags = uri.queryParameters['tags']!.split(',').toSet();
       }
+      if (uri.queryParameters['search'] != null) {
+        _searchText = uri.queryParameters['search']!;
+        _searchController.text = _searchText;
+      }
       if (uri.queryParameters['view'] != null) {
         _isKanbanView = uri.queryParameters['view'] == 'kanban';
       }
@@ -428,6 +434,9 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
       }
       if (_selectedTags.isNotEmpty) {
         queryParams['tags'] = _selectedTags.join(',');
+      }
+      if (_searchText.isNotEmpty) {
+        queryParams['search'] = _searchText;
       }
       if (_isKanbanView) {
         queryParams['view'] = 'kanban';
@@ -1149,6 +1158,13 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
         }
       }
 
+      // Filter by search text
+      if (_searchText.isNotEmpty) {
+        if (!issue.title.toLowerCase().contains(_searchText.toLowerCase())) {
+          return false;
+        }
+      }
+
       return true;
     }).toList();
   }
@@ -1161,6 +1177,8 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
       _selectedStatuses.clear();
       _selectedTags.clear();
       _selectedPriorities.clear();
+      _searchText = '';
+      _searchController.clear();
     });
     _updateUrlFilters();
   }
@@ -1186,6 +1204,9 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
     if (_selectedTags.isNotEmpty) {
       queryParams['tags'] = _selectedTags.join(',');
     }
+    if (_searchText.isNotEmpty) {
+      queryParams['search'] = _searchText;
+    }
 
     final uri = Uri(
         path: '/issues',
@@ -1210,7 +1231,14 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
         _selectedCreators.isNotEmpty ||
         _selectedStatuses.isNotEmpty ||
         _selectedTags.isNotEmpty ||
-        _selectedPriorities.isNotEmpty;
+        _selectedPriorities.isNotEmpty ||
+        _searchText.isNotEmpty;
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   String _getProjectName(int projectId) {
@@ -1315,6 +1343,56 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
                 ),
               ),
               const SizedBox(width: 16),
+              // Search field
+              SizedBox(
+                width: 200,
+                height: 32,
+                child: TextField(
+                  controller: _searchController,
+                  onChanged: (value) {
+                    setState(() {
+                      _searchText = value;
+                    });
+                    _updateUrlFilters();
+                  },
+                  decoration: InputDecoration(
+                    hintText: 'Search titles...',
+                    hintStyle:
+                        const TextStyle(fontSize: 12, color: Colors.grey),
+                    prefixIcon:
+                        const Icon(Icons.search, size: 16, color: Colors.grey),
+                    suffixIcon: _searchText.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear, size: 16),
+                            onPressed: () {
+                              setState(() {
+                                _searchText = '';
+                                _searchController.clear();
+                              });
+                              _updateUrlFilters();
+                            },
+                          )
+                        : null,
+                    border: const OutlineInputBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(6)),
+                      borderSide: BorderSide(color: Colors.grey),
+                    ),
+                    enabledBorder: const OutlineInputBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(6)),
+                      borderSide: BorderSide(color: Colors.grey),
+                    ),
+                    focusedBorder: const OutlineInputBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(6)),
+                      borderSide: BorderSide(color: Color(0xFF008080)),
+                    ),
+                    contentPadding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                    isDense: true,
+                  ),
+                  style: const TextStyle(fontSize: 12),
+                ),
+              ),
+              const SizedBox(width: 12),
               Expanded(
                 child: SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
@@ -1623,6 +1701,11 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
     if (_selectedAssignees.isNotEmpty) {
       activeFilters.add(
         _buildFilterChip('Assignee', _selectedAssignees.length.toString()),
+      );
+    }
+    if (_searchText.isNotEmpty) {
+      activeFilters.add(
+        _buildFilterChip('Search', '"$_searchText"'),
       );
     }
 
