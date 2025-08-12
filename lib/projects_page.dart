@@ -195,6 +195,7 @@ class _ProjectsPageState extends State<ProjectsPage> {
             createdAt: project.createdAt,
             updatedAt: project.updatedAt,
             totalTimeSeconds: timeSpent,
+            tags: project.tags,
           );
         }).toList();
       });
