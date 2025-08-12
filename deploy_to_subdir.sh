@@ -23,8 +23,8 @@ if [ -d "backend" ]; then
     # Create backend directory in build/web if it doesn't exist
     mkdir -p build/web/backend
     
-    # Copy all backend files except the test folder
-    rsync -av --exclude='test/' backend/ build/web/backend/
+    # Copy all backend files except the test folder and database.sqlite
+    rsync -av --exclude='test/' --exclude='database.sqlite' backend/ build/web/backend/
     
     # Alternative method using cp if rsync is not available
     # cp -r backend/* build/web/backend/ 2>/dev/null || true
