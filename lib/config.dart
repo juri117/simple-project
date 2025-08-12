@@ -144,6 +144,10 @@ class Config {
 
   String get backendBaseUrl => backendUrl;
 
+  String get baseUrl {
+    return _config['base_url'] as String? ?? 'http://localhost:8080';
+  }
+
   // Helper method to build full API endpoint URLs
   String buildApiUrl(String endpoint) {
     // Ensure the backend URL doesn't end with a slash

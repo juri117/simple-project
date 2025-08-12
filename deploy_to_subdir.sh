@@ -17,6 +17,8 @@ flutter pub get
 echo "🔨 Building Flutter web app for /sp/ subdirectory..."
 flutter build web --base-href /sp/
 
+mv build/web/assets/assets/config.json build/web/assets/assets/config-sample.json
+
 # Copy backend files to build/web/backend (excluding test folder)
 echo "📁 Copying backend files to build/web/backend (excluding test folder)..."
 if [ -d "backend" ]; then

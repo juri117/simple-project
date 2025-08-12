@@ -285,6 +285,7 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
   String _searchText = ''; // Search text for filtering issue titles
   final TextEditingController _searchController = TextEditingController();
   bool _urlFiltersParsed = false;
+  int? _issueIdToOpen; // Issue ID to open in details dialog
 
   @override
   void initState() {
@@ -407,6 +408,12 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
       if (uri.queryParameters['view'] != null) {
         _isKanbanView = uri.queryParameters['view'] == 'kanban';
       }
+      if (uri.queryParameters['issue_id'] != null) {
+        final issueId = int.tryParse(uri.queryParameters['issue_id']!);
+        if (issueId != null) {
+          _issueIdToOpen = issueId;
+        }
+      }
     } catch (e) {
       // If router state is not available, skip URL parsing
       // This can happen when the widget is created as a child of another route
@@ -440,6 +447,9 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
       }
       if (_isKanbanView) {
         queryParams['view'] = 'kanban';
+      }
+      if (_issueIdToOpen != null) {
+        queryParams['issue_id'] = _issueIdToOpen.toString();
       }
 
       final uri = Uri(
@@ -517,6 +527,41 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
           }
         }
       });
+
+      // Check if we need to open an issue details dialog
+      if (_issueIdToOpen != null) {
+        _openIssueDetailsAfterLoad();
+      }
+    }
+  }
+
+  void _openIssueDetailsAfterLoad() {
+    try {
+      final issueToOpen = _issues.firstWhere(
+        (issue) => issue.id == _issueIdToOpen,
+        orElse: () => throw Exception('Issue not found'),
+      );
+
+      // Clear the issue ID to prevent reopening on subsequent loads
+      _issueIdToOpen = null;
+
+      // Use a post-frame callback to ensure the widget is fully built
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _showDescriptionDialog(issueToOpen);
+        }
+      });
+    } catch (e) {
+      // If issue not found, show a snackbar and clear the ID
+      _issueIdToOpen = null;
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Issue not found: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -1208,10 +1253,13 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
       queryParams['search'] = _searchText;
     }
 
-    final uri = Uri(
-        path: '/issues',
-        queryParameters: queryParams.isEmpty ? null : queryParams);
-    final url = uri.toString();
+    final baseUrl = Config.instance.baseUrl;
+    final queryString = queryParams.entries
+        .map((e) => '${e.key}=${Uri.encodeComponent(e.value)}')
+        .join('&');
+    final url = queryParams.isEmpty
+        ? '$baseUrl/#/issues'
+        : '$baseUrl/#/issues?$queryString';
 
     // Copy to clipboard
     Clipboard.setData(ClipboardData(text: url));
@@ -3204,6 +3252,24 @@ class _IssueDetailDialogState extends State<IssueDetailDialog> {
     }
   }
 
+  void _copyIssueLink() {
+    final baseUrl = Config.instance.baseUrl;
+    final queryParams = {'issue_id': widget.issue.id.toString()};
+    final queryString = queryParams.entries
+        .map((e) => '${e.key}=${Uri.encodeComponent(e.value)}')
+        .join('&');
+    final url = '$baseUrl/#/issues?$queryString';
+
+    Clipboard.setData(ClipboardData(text: url));
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Issue link copied to clipboard!'),
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
   String _formatDateTime(String timestamp) {
     try {
       final dateTime = DateTime.parse(timestamp);
@@ -3239,6 +3305,11 @@ class _IssueDetailDialogState extends State<IssueDetailDialog> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
+                ),
+                IconButton(
+                  onPressed: () => _copyIssueLink(),
+                  icon: const Icon(Icons.link),
+                  tooltip: 'Copy issue link',
                 ),
                 IconButton(
                   onPressed: () => Navigator.of(context).pop(),
