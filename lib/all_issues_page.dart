@@ -2528,6 +2528,15 @@ class _IssueDialogState extends State<IssueDialog> {
       _assigneeId = assignee.id > 0 ? assignee.id : null;
       _selectedProjectId = widget.issue!.projectId;
       _attachments = List.from(widget.issue!.attachments);
+
+      // Initialize selected tags from existing issue tags
+      if (widget.issue!.tags.isNotEmpty) {
+        _selectedTags =
+            widget.issue!.tags.split(',').map((tag) => tag.trim()).toList();
+      }
+
+      // Load project tags for existing issues
+      _loadProjectTags(widget.issue!.projectId);
     } else {
       // For new issues, select the first project by default
       if (widget.projects.isNotEmpty) {
@@ -2774,14 +2783,7 @@ class _IssueDialogState extends State<IssueDialog> {
                 ],
               ),
               const SizedBox(height: 16),
-              TextFormField(
-                controller: _tagsController,
-                decoration: const InputDecoration(
-                  labelText: 'Tags (comma-separated)',
-                  border: OutlineInputBorder(),
-                  hintText: 'bug, frontend, urgent',
-                ),
-              ),
+              // Tags input field hidden - using clickable tags instead
               if (_projectTags.isNotEmpty) ...[
                 const SizedBox(height: 8),
                 const Text(
