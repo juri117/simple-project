@@ -36,7 +36,7 @@ class UserSession {
         _userRole = userRole ?? 'normal';
       }
     } catch (e) {
-      print('Error loading user session: $e');
+      // Error loading user session: $e
     }
 
     _isInitialized = true;
@@ -57,7 +57,7 @@ class UserSession {
       await prefs.setString('session_token', sessionToken);
       await prefs.setString('user_role', _userRole!);
     } catch (e) {
-      print('Error saving user session: $e');
+      // Error saving user session: $e
     }
   }
 
@@ -75,7 +75,7 @@ class UserSession {
       await prefs.remove('session_token');
       await prefs.remove('user_role');
     } catch (e) {
-      print('Error clearing user session: $e');
+      // Error clearing user session: $e
     }
   }
 
@@ -114,22 +114,22 @@ class Config {
         final file = File('config.json');
         if (await file.exists()) {
           configString = await file.readAsString();
-          print('Loaded config from project root: config.json');
+          // Loaded config from project root: config.json
         } else {
           // Fallback to bundled asset if root file doesn't exist
           configString = await rootBundle.loadString('assets/config.json');
-          print('Loaded config from bundled asset: assets/config.json');
+          // Loaded config from bundled asset: assets/config.json
         }
       } catch (e) {
         // If file system access fails (e.g., in web), fallback to bundled asset
         configString = await rootBundle.loadString('assets/config.json');
-        print('Fallback to bundled asset due to error: $e');
+        // Fallback to bundled asset due to error: $e
       }
 
       _config = json.decode(configString) as Map<String, dynamic>;
     } catch (e) {
       // Final fallback configuration
-      print('Using fallback configuration due to error: $e');
+      // Using fallback configuration due to error: $e
       _config = {
         'backend': {'url': 'http://sp-be.diaven.de'}
       };

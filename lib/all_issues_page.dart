@@ -97,7 +97,7 @@ class Issue {
             .map((attachment) => FileAttachment.fromJson(attachment))
             .toList();
       } catch (e) {
-        print('Error parsing attachments: $e');
+        // Error parsing attachments: $e
         attachments = [];
       }
     }
@@ -108,14 +108,13 @@ class Issue {
         tagObjects = (json['tag_objects'] as List)
             .map((tag) => Tag.fromJson(tag))
             .toList();
-        print('Issue ${json['id']}: Parsed ${tagObjects.length} tag objects');
+        // Issue ${json['id']}: Parsed ${tagObjects.length} tag objects
       } catch (e) {
-        print('Error parsing tag objects: $e');
+        // Error parsing tag objects: $e
         tagObjects = [];
       }
     } else {
-      print(
-          'Issue ${json['id']}: No tag_objects field found, tags string: "${json['tags']}"');
+      // Issue ${json['id']}: No tag_objects field found, tags string: "${json['tags']}"
     }
 
     return Issue(
@@ -984,6 +983,7 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
     }
   }
 
+  // ignore: unused_element
   Color _getPriorityColor(String priority) {
     switch (priority.toLowerCase()) {
       case 'high':
@@ -1918,10 +1918,11 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: hexToColor(tag.color).withOpacity(0.2),
+                            color: hexToColor(tag.color).withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(
-                              color: hexToColor(tag.color).withOpacity(0.5),
+                              color:
+                                  hexToColor(tag.color).withValues(alpha: 0.5),
                               width: 1,
                             ),
                           ),
@@ -2334,11 +2335,11 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
                                           horizontal: 6, vertical: 2),
                                       decoration: BoxDecoration(
                                         color: hexToColor(tag.color)
-                                            .withOpacity(0.2),
+                                            .withValues(alpha: 0.2),
                                         borderRadius: BorderRadius.circular(8),
                                         border: Border.all(
                                           color: hexToColor(tag.color)
-                                              .withOpacity(0.5),
+                                              .withValues(alpha: 0.5),
                                           width: 1,
                                         ),
                                       ),
@@ -2712,13 +2713,15 @@ class _IssueDialogState extends State<IssueDialog> {
               if (widget.issue == null) {
                 // Store the file path for later upload after issue creation
                 // For now, we'll show a message that files can only be uploaded after creation
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                        'Files can be uploaded after the issue is created'),
-                    backgroundColor: Colors.orange,
-                  ),
-                );
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                          'Files can be uploaded after the issue is created'),
+                      backgroundColor: Colors.orange,
+                    ),
+                  );
+                }
                 break;
               } else {
                 // Upload file for existing issue
@@ -2733,23 +2736,27 @@ class _IssueDialogState extends State<IssueDialog> {
                 }
               }
             } catch (e) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Failed to upload ${file.name}: $e'),
-                  backgroundColor: Colors.red,
-                ),
-              );
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Failed to upload ${file.name}: $e'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
             }
           }
         }
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error picking files: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error picking files: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     } finally {
       setState(() {
         _isUploading = false;
@@ -2901,7 +2908,7 @@ class _IssueDialogState extends State<IssueDialog> {
                         decoration: BoxDecoration(
                           color: isSelected
                               ? _parseColor(tag.color)
-                              : _parseColor(tag.color).withOpacity(0.2),
+                              : _parseColor(tag.color).withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
                             color: _parseColor(tag.color),

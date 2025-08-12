@@ -34,7 +34,7 @@ class Project {
             .map((tagJson) => Tag.fromJson(tagJson))
             .toList();
       } catch (e) {
-        print('Error parsing tags for project ${json['id']}: $e');
+        // Error parsing tags for project ${json['id']}: $e
         tags = [];
       }
     }
@@ -111,11 +111,11 @@ class _ProjectsPageState extends State<ProjectsPage> {
             setState(() {
               try {
                 _projects = (data['projects'] as List).map((project) {
-                  print('Parsing project: ${project['name']}');
+                  // Parsing project: ${project['name']}
                   return Project.fromJson(project);
                 }).toList();
               } catch (e) {
-                print('Error parsing projects: $e');
+                // Error parsing projects: $e
                 setState(() {
                   _isError = true;
                   _errorMessage = 'Error parsing project data: $e';
@@ -563,7 +563,7 @@ class _ProjectsPageState extends State<ProjectsPage> {
                                                 ),
                                                 decoration: BoxDecoration(
                                                   color: _parseColor(tag.color)
-                                                      .withOpacity(0.2),
+                                                      .withValues(alpha: 0.2),
                                                   borderRadius:
                                                       BorderRadius.circular(8),
                                                   border: Border.all(

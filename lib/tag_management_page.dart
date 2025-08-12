@@ -108,20 +108,27 @@ class _TagManagementPageState extends State<TagManagementPage> {
         final data = json.decode(response.body);
 
         if (data['success']) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-                content: Text('Tag "${tag.shortName}" disabled successfully')),
-          );
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                  content:
+                      Text('Tag "${tag.shortName}" disabled successfully')),
+            );
+          }
           await _loadTags();
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(data['error'] ?? 'Failed to disable tag')),
-          );
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(data['error'] ?? 'Failed to disable tag')),
+            );
+          }
         }
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error disabling tag: $e')),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error disabling tag: $e')),
+          );
+        }
       }
     }
   }
@@ -212,8 +219,8 @@ class _TagManagementPageState extends State<TagManagementPage> {
                     ),
       floatingActionButton: FloatingActionButton(
         onPressed: _createTag,
-        child: const Icon(Icons.add),
         tooltip: 'Create new tag',
+        child: const Icon(Icons.add),
       ),
     );
   }
@@ -269,7 +276,7 @@ class _TagEditDialogState extends State<TagEditDialog> {
   }
 
   String _colorToHex(Color color) {
-    return '#${color.value.toRadixString(16).substring(2)}';
+    return '#${color.toARGB32().toRadixString(16).substring(2)}';
   }
 
   Future<void> _saveTag() async {

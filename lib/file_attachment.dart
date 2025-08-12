@@ -108,13 +108,13 @@ class FileUploadService {
 
       if (response.statusCode == 200) {
         final data = json.decode(responseBody);
-        print('Upload response: $data'); // Debug log
+        // Upload response: $data // Debug log
         if (data['success'] == true && data['attachment'] != null) {
           try {
             return FileAttachment.fromJson(data['attachment']);
           } catch (e) {
-            print('Error parsing attachment: $e');
-            print('Attachment data: ${data['attachment']}');
+            // Error parsing attachment: $e
+            // Attachment data: ${data['attachment']}
             throw Exception('Failed to parse attachment data: $e');
           }
         } else {
@@ -271,7 +271,7 @@ class FileAttachmentWidget extends StatelessWidget {
       width: 40,
       height: 40,
       decoration: BoxDecoration(
-        color: iconColor.withOpacity(0.1),
+        color: iconColor.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(4),
       ),
       child: Icon(iconData, color: iconColor, size: 20),
@@ -309,7 +309,7 @@ class FileAttachmentWidget extends StatelessWidget {
   void _downloadFile(BuildContext context) {
     // For web, this will trigger a download
     // For mobile, you might want to use a different approach
-    final url = Uri.parse(attachment.fileUrl);
+    // final url = Uri.parse(attachment.fileUrl);
     // You could use url_launcher or similar package here
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
