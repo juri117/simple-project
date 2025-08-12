@@ -17,6 +17,24 @@ flutter pub get
 echo "🔨 Building Flutter web app for /sp/ subdirectory..."
 flutter build web --base-href /sp/
 
+# Copy backend files to build/web/backend (excluding test folder)
+echo "📁 Copying backend files to build/web/backend (excluding test folder)..."
+if [ -d "backend" ]; then
+    # Create backend directory in build/web if it doesn't exist
+    mkdir -p build/web/backend
+    
+    # Copy all backend files except the test folder
+    rsync -av --exclude='test/' backend/ build/web/backend/
+    
+    # Alternative method using cp if rsync is not available
+    # cp -r backend/* build/web/backend/ 2>/dev/null || true
+    # rm -rf build/web/backend/test 2>/dev/null || true
+    
+    echo "✅ Backend files copied successfully!"
+else
+    echo "⚠️  Backend directory not found, skipping backend copy"
+fi
+
 # Create .htaccess file for HTTPS redirection and Flutter routing
 echo "🔒 Creating .htaccess file for HTTPS redirection..."
 cat > build/web/.htaccess << 'EOF'
@@ -43,6 +61,8 @@ Header always set Referrer-Policy "strict-origin-when-cross-origin"
     Header set Cache-Control "public, immutable"
 </FilesMatch>
 EOF
+
+
 
 echo "✅ Build completed successfully!"
 echo ""
