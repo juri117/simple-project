@@ -36,6 +36,8 @@ switch ($method) {
             updateTimerEntry($pdo, $input);
         } elseif (isset($input['action']) && $input['action'] === 'delete_entry') {
             deleteTimerEntry($pdo, $input);
+        } elseif (isset($input['action']) && $input['action'] === 'abort') {
+            abortTimer($pdo, $input);
         } else {
             http_response_code(400);
             echo json_encode(['success' => false, 'error' => 'Invalid action']);
@@ -471,6 +473,37 @@ function getTimerEntries($pdo, $params) {
     } catch (PDOException $e) {
         http_response_code(500);
         echo json_encode(['success' => false, 'error' => 'Failed to get timer entries: ' . $e->getMessage()]);
+    }
+}
+
+function abortTimer($pdo, $input) {
+    if (!isset($input['user_id'])) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'error' => 'user_id is required']);
+        return;
+    }
+    
+    $userId = (int)$input['user_id'];
+    
+    try {
+        // Delete the active timer for this user (where stop_time IS NULL)
+        $stmt = $pdo->prepare("DELETE FROM time_tracking WHERE user_id = ? AND stop_time IS NULL");
+        $result = $stmt->execute([$userId]);
+        
+        if ($stmt->rowCount() > 0) {
+            echo json_encode([
+                'success' => true,
+                'message' => 'Timer aborted successfully'
+            ]);
+        } else {
+            echo json_encode([
+                'success' => false,
+                'error' => 'No active timer found to abort'
+            ]);
+        }
+    } catch (PDOException $e) {
+        http_response_code(500);
+        echo json_encode(['success' => false, 'error' => 'Failed to abort timer: ' . $e->getMessage()]);
     }
 }
 ?>
