@@ -66,6 +66,22 @@ class _TimerWidgetState extends State<TimerWidget> {
     }
   }
 
+  Future<void> _abortTimer() async {
+    if (UserSession.instance.isLoggedIn &&
+        UserSession.instance.userId != null) {
+      final success = await TimeTrackingService.instance
+          .abortTimer(UserSession.instance.userId!);
+      if (success && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Timer aborted'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+    }
+  }
+
   Future<void> _showManualStopDialog() async {
     if (_timerState['issueTitle'] != null &&
         _timerState['projectName'] != null) {
@@ -167,6 +183,9 @@ class _TimerWidgetState extends State<TimerWidget> {
                 case 'stop_manual':
                   _showManualStopDialog();
                   break;
+                case 'abort':
+                  _abortTimer();
+                  break;
               }
             },
             itemBuilder: (context) => [
@@ -187,6 +206,16 @@ class _TimerWidgetState extends State<TimerWidget> {
                     Icon(Icons.schedule, size: 16),
                     SizedBox(width: 8),
                     Text('Set Manual Time'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'abort',
+                child: Row(
+                  children: [
+                    Icon(Icons.cancel, size: 16),
+                    SizedBox(width: 8),
+                    Text('Abort & Delete'),
                   ],
                 ),
               ),

@@ -299,6 +299,37 @@ class TimeTrackingService {
     }
   }
 
+  // Abort the active timer (delete without saving)
+  Future<bool> abortTimer(int userId) async {
+    try {
+      final response = await HttpService().post(
+        Config.instance.buildApiUrl('time_tracking.php'),
+        body: {
+          'action': 'abort',
+          'user_id': userId,
+        },
+      );
+
+      // Handle authentication errors
+      if (await HttpService().handleAuthError(response)) {
+        return false;
+      }
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['success'] == true) {
+          _stopTimer();
+          _clearActiveTimer();
+          _notifyListeners();
+          return true;
+        }
+      }
+      return false;
+    } catch (e) {
+      return false;
+    }
+  }
+
   // Delete a timer entry
   Future<bool> deleteTimerEntry(int entryId) async {
     try {

@@ -18,13 +18,14 @@ This document describes the implementation of time tracking functionality for th
 ### 2. Backend API (`time_tracking.php`)
 
 #### Endpoints:
-- **POST** `/time_tracking.php` - Start/Stop timers
+- **POST** `/time_tracking.php` - Start/Stop/Abort timers
 - **GET** `/time_tracking.php?action=active&user_id=X` - Get active timer
 - **GET** `/time_tracking.php?action=stats&user_id=X&issue_id=Y&project_id=Z` - Get time statistics
 
 #### Features:
 - Start timer for an issue (automatically stops any active timer for the same user)
 - Stop active timer
+- Abort active timer (delete without saving time)
 - Get current active timer with issue and project details
 - Get time statistics for issues and projects
 - Support for filtering by user, issue, or project
@@ -79,7 +80,15 @@ This document describes the implementation of time tracking functionality for th
 
 ### Stopping a Timer
 1. Click the stop button (⏹️) in the header timer widget
-2. Timer stops and time is saved to database
+2. Choose from the following options:
+   - **Stop Now**: Stops the timer and saves the elapsed time
+   - **Set Manual Time**: Allows setting a custom duration for the timer
+   - **Abort & Delete**: Cancels the timer and deletes the record without saving any time
+
+### Aborting a Timer
+1. Click the stop button (⏹️) in the header timer widget
+2. Select "Abort & Delete" from the dropdown menu
+3. The timer is immediately cancelled and no time is recorded
 
 ### Viewing Time Statistics
 - **Issues**: Total time spent is displayed next to each issue
@@ -99,7 +108,10 @@ This document describes the implementation of time tracking functionality for th
 2. Timer service updates local state
 3. Timer widget displays in header
 4. Real-time updates via StreamController
-5. User clicks stop → API call to stop timer
+5. User clicks stop → Choose from stop options:
+   - **Stop Now**: API call to stop timer, time is saved
+   - **Set Manual Time**: API call to stop timer with custom duration
+   - **Abort & Delete**: API call to abort timer, record is deleted
 6. Timer disappears from header
 7. Time statistics are updated on next page load
 
