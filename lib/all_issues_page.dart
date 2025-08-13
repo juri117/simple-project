@@ -1987,31 +1987,28 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                ...issue.tagObjects
-                    .map((tag) => Padding(
-                        padding: const EdgeInsets.only(right: 4),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: hexToColor(tag.color).withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color:
-                                  hexToColor(tag.color).withValues(alpha: 0.5),
-                              width: 1,
-                            ),
-                          ),
-                          child: Text(
-                            tag.shortName,
-                            style: TextStyle(
-                              fontSize: 9,
-                              color: hexToColor(tag.color),
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        )))
-                    .toList(),
+                ...issue.tagObjects.map((tag) => Padding(
+                    padding: const EdgeInsets.only(right: 4),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: hexToColor(tag.color).withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: hexToColor(tag.color).withValues(alpha: 0.5),
+                          width: 1,
+                        ),
+                      ),
+                      child: Text(
+                        tag.shortName,
+                        style: TextStyle(
+                          fontSize: 9,
+                          color: hexToColor(tag.color),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ))),
                 const Spacer(),
                 Icon(Icons.schedule, size: 16, color: Colors.grey[600]),
                 const SizedBox(width: 4),
@@ -2403,32 +2400,30 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
                           //),
                           if (issue.tagObjects.isNotEmpty) ...[
                             const SizedBox(width: 8),
-                            ...issue.tagObjects
-                                .map((tag) => Padding(
-                                    padding: const EdgeInsets.only(left: 4),
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 6, vertical: 2),
-                                      decoration: BoxDecoration(
-                                        color: hexToColor(tag.color)
-                                            .withValues(alpha: 0.2),
-                                        borderRadius: BorderRadius.circular(8),
-                                        border: Border.all(
-                                          color: hexToColor(tag.color)
-                                              .withValues(alpha: 0.5),
-                                          width: 1,
-                                        ),
-                                      ),
-                                      child: Text(
-                                        tag.shortName,
-                                        style: TextStyle(
-                                          fontSize: 9,
-                                          color: hexToColor(tag.color),
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    )))
-                                .toList(),
+                            ...issue.tagObjects.map((tag) => Padding(
+                                padding: const EdgeInsets.only(left: 4),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: hexToColor(tag.color)
+                                        .withValues(alpha: 0.2),
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                      color: hexToColor(tag.color)
+                                          .withValues(alpha: 0.5),
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    tag.shortName,
+                                    style: TextStyle(
+                                      fontSize: 9,
+                                      color: hexToColor(tag.color),
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ))),
                           ],
                         ],
                       ),
@@ -3413,7 +3408,7 @@ class _IssueDetailDialogState extends State<IssueDetailDialog> {
                           return FileAttachmentWidget(
                             attachment: attachment,
                           );
-                        }).toList(),
+                        }),
                       ]),
                       const SizedBox(height: 24),
                     ],
@@ -4001,6 +3996,10 @@ class _TimerEntryDialogState extends State<TimerEntryDialog> {
               final startTime = startDateTime.millisecondsSinceEpoch ~/ 1000;
               final stopTime = endDateTime.millisecondsSinceEpoch ~/ 1000;
 
+              // Store context before async operations
+              final scaffoldMessenger = ScaffoldMessenger.of(context);
+              final navigator = Navigator.of(context);
+
               try {
                 bool success;
                 if (widget.isNewEntry) {
@@ -4020,7 +4019,7 @@ class _TimerEntryDialogState extends State<TimerEntryDialog> {
 
                 if (success) {
                   if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
+                    scaffoldMessenger.showSnackBar(
                       SnackBar(
                         content: Text(widget.isNewEntry
                             ? 'Timer entry created successfully'
@@ -4028,11 +4027,11 @@ class _TimerEntryDialogState extends State<TimerEntryDialog> {
                         backgroundColor: Colors.green,
                       ),
                     );
+                    navigator.pop({'success': true});
                   }
-                  Navigator.of(context).pop({'success': true});
                 } else {
                   if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
+                    scaffoldMessenger.showSnackBar(
                       SnackBar(
                         content: Text(widget.isNewEntry
                             ? 'Failed to create timer entry'
@@ -4044,7 +4043,7 @@ class _TimerEntryDialogState extends State<TimerEntryDialog> {
                 }
               } catch (e) {
                 if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  scaffoldMessenger.showSnackBar(
                     SnackBar(
                       content: Text('Error: $e'),
                       backgroundColor: Colors.red,
