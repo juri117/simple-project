@@ -1416,6 +1416,7 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
                     ),
                   ),
                 ),
+                /*
                 const SizedBox(width: 8),
                 IconButton(
                   onPressed: _copyFilteredUrl,
@@ -1428,6 +1429,7 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
                     ),
                   ),
                 ),
+                */
               ],
             ],
           ),
