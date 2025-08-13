@@ -183,5 +183,5 @@ class ResponsiveBreakpoints {
   /// - 768: Tablet/desktop (current default)
   /// - 900: Desktop-focused
   /// - 1024: Large desktop
-  static const double mobileBreakpoint = 1024.0; //768
+  static const double mobileBreakpoint = 1201.0; //768
 }

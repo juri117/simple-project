@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -1781,7 +1783,10 @@ class _AllIssuesPageState extends State<AllIssuesPage> {
     final scrollController = ScrollController();
 
     return Container(
-      width: 320,
+      width: (MediaQuery.of(context).size.width <
+              ResponsiveBreakpoints.mobileBreakpoint)
+          ? max((MediaQuery.of(context).size.width - 80) / 4, 220)
+          : (MediaQuery.of(context).size.width - 250 - 80) / 4,
       margin: const EdgeInsets.all(8),
       child: Column(
         children: [
